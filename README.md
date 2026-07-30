@@ -161,6 +161,30 @@ Keeping it current is the test leads' responsibility; a stale inventory makes se
 back to running the whole suite. The file carries no timestamp, so it changes only when the
 tests do.
 
+### Coverage map
+
+[`tests/coverage-map.json`](tests/coverage-map.json) answers "which tests exercise this file?".
+It is *recorded*, not inferred: a full run with `VOYAGENIE_COVERAGE=1` observes, per test, the
+routes visited, the API endpoints called, and the frontend source files whose functions actually
+ran (Chromium V8 coverage — Vite dev-serves unbundled modules, so script URLs map straight to
+source paths).
+
+```bash
+cd tests
+npm run coverage:map      # full run against the live stack, rewrites coverage-map.json
+```
+
+```json
+"bySourceFile": { "frontend/src/pages/Packages.tsx": ["business.spec.ts > … > packages can be filtered by travel style", "…"] },
+"byEndpoint":   { "POST /ai/budget": ["genai.spec.ts > … > budget optimizer returns a category breakdown"] },
+"backendOwners": { "/api/packages": "backend/src/routes/packages.ts" }
+```
+
+`backendOwners` is read from the `app.use()` mounts in `backend/src/index.ts`, so a changed
+backend route file resolves to endpoints and from there to tests. Regenerate after adding tests
+or moving routes; a source file absent from `bySourceFile` is a genuine coverage gap, not a
+mapping error. Recording forces a single worker and adds ~15s to the run, so it is opt-in.
+
 Override the targets with `VOYAGENIE_BASE_URL` (default `http://localhost:5173`) and
 `VOYAGENIE_API_URL` (default `http://localhost:4000`). Each test runs in a fresh browser
 context, so every test gets its own `x-session-id` — trips and hourly rate-limit counters

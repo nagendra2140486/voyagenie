@@ -1,0 +1,923 @@
+{
+  "schemaVersion": 1,
+  "complete": true,
+  "totalTests": 35,
+  "backendOwners": {
+    "/api": "backend/src/routes/governance.ts",
+    "/api/destinations": "backend/src/routes/destinations.ts",
+    "/api/packages": "backend/src/routes/packages.ts",
+    "/api/trips": "backend/src/routes/trips.ts",
+    "/api/contact": "backend/src/routes/contact.ts",
+    "/ai": "backend/src/routes/ai.ts"
+  },
+  "tests": [
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "status": "passed",
+      "routes": [
+        "/packages"
+      ],
+      "endpoints": [
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Packages.tsx",
+        "frontend/src/pages/TripPlanner.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "status": "passed",
+      "routes": [
+        "/destinations"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/destinations/filters"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Destinations.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > contact form blocks an invalid email client-side",
+      "status": "passed",
+      "routes": [
+        "/contact"
+      ],
+      "endpoints": [],
+      "sourceFiles": [
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Contact.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "status": "passed",
+      "routes": [
+        "/contact"
+      ],
+      "endpoints": [
+        "POST /api/contact"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Contact.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "status": "passed",
+      "routes": [
+        "/destinations"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/destinations/filters"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Destinations.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "status": "passed",
+      "routes": [
+        "/"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/destinations/filters",
+        "GET /api/destinations/{id}",
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/DestinationDetails.tsx",
+        "frontend/src/pages/Destinations.tsx",
+        "frontend/src/pages/Home.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "status": "passed",
+      "routes": [
+        "/"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Home.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > packages can be filtered by travel style",
+      "status": "passed",
+      "routes": [
+        "/packages"
+      ],
+      "endpoints": [
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Packages.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route / renders",
+      "status": "passed",
+      "routes": [
+        "/"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Home.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /about renders",
+      "status": "passed",
+      "routes": [
+        "/about"
+      ],
+      "endpoints": [],
+      "sourceFiles": [
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/About.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /ai-governance renders",
+      "status": "passed",
+      "routes": [
+        "/ai-governance"
+      ],
+      "endpoints": [
+        "GET /api/llm-audit"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Governance.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /assistant renders",
+      "status": "passed",
+      "routes": [
+        "/assistant"
+      ],
+      "endpoints": [],
+      "sourceFiles": [
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/Assistant.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /budget renders",
+      "status": "passed",
+      "routes": [
+        "/budget"
+      ],
+      "endpoints": [],
+      "sourceFiles": [
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/BudgetOptimizer.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /contact renders",
+      "status": "passed",
+      "routes": [
+        "/contact"
+      ],
+      "endpoints": [],
+      "sourceFiles": [
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Contact.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /destinations renders",
+      "status": "passed",
+      "routes": [
+        "/destinations"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/destinations/filters"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Destinations.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /packages renders",
+      "status": "passed",
+      "routes": [
+        "/packages"
+      ],
+      "endpoints": [
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Packages.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /planner renders",
+      "status": "passed",
+      "routes": [
+        "/planner"
+      ],
+      "endpoints": [],
+      "sourceFiles": [
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/TripPlanner.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > route /trips renders",
+      "status": "passed",
+      "routes": [
+        "/trips"
+      ],
+      "endpoints": [
+        "GET /api/trips"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/MyTrips.tsx"
+      ]
+    },
+    {
+      "file": "business.spec.ts",
+      "title": "Voyagenie commercial journeys > unknown route renders the 404 page",
+      "status": "passed",
+      "routes": [
+        "/no-such-page"
+      ],
+      "endpoints": [
+        "GET /api/destinations",
+        "GET /api/packages"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Cards.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/Home.tsx",
+        "frontend/src/pages/NotFound.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "status": "passed",
+      "routes": [
+        "/assistant"
+      ],
+      "endpoints": [
+        "POST /ai/chat"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/Assistant.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "status": "passed",
+      "routes": [
+        "/assistant"
+      ],
+      "endpoints": [
+        "POST /ai/chat"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/Assistant.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "status": "passed",
+      "routes": [
+        "/budget"
+      ],
+      "endpoints": [
+        "POST /ai/budget"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/BudgetOptimizer.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "status": "passed",
+      "routes": [
+        "/planner",
+        "/trips"
+      ],
+      "endpoints": [
+        "GET /api/trips",
+        "POST /ai/itinerary",
+        "POST /api/trips"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/MyTrips.tsx",
+        "frontend/src/pages/TripPlanner.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "status": "passed",
+      "routes": [
+        "/trips"
+      ],
+      "endpoints": [
+        "GET /api/trips"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/pages/MyTrips.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "status": "passed",
+      "routes": [
+        "/planner"
+      ],
+      "endpoints": [
+        "POST /ai/itinerary"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/TripPlanner.tsx"
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "title": "Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "status": "passed",
+      "routes": [
+        "/planner",
+        "/trips"
+      ],
+      "endpoints": [
+        "DELETE /api/trips/{id}",
+        "GET /api/trips",
+        "PATCH /api/trips/{id}",
+        "POST /ai/itinerary",
+        "POST /api/trips",
+        "POST /api/trips/{id}/clone"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/MyTrips.tsx",
+        "frontend/src/pages/TripPlanner.tsx"
+      ]
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > audit log records calls without leaking the API key",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "GET /api/llm-audit",
+        "POST /ai/itinerary"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration",
+      "status": "passed",
+      "routes": [
+        "/ai-governance",
+        "/planner"
+      ],
+      "endpoints": [
+        "GET /api/llm-audit",
+        "POST /ai/itinerary"
+      ],
+      "sourceFiles": [
+        "frontend/src/api/client.ts",
+        "frontend/src/api/endpoints.ts",
+        "frontend/src/components/AiMetaBar.tsx",
+        "frontend/src/components/Feedback.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Markdown.tsx",
+        "frontend/src/pages/Governance.tsx",
+        "frontend/src/pages/TripPlanner.tsx"
+      ]
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > itinerary calls are rate limited per session and hour",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "POST /ai/itinerary"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > malformed payloads fail validation instead of erroring",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "POST /ai/itinerary"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > prompt injection is blocked before reaching a provider",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "POST /ai/chat"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > prompts over the configured length are rejected",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "POST /ai/chat"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "title": "Voyagenie guardrails and governance > rate-limit headers expose the remaining allowance",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "POST /ai/itinerary"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "openapi.spec.ts",
+      "title": "OpenAPI documentation > swagger ui renders the operations",
+      "status": "passed",
+      "routes": [
+        "/api/docs/"
+      ],
+      "endpoints": [
+        "GET /api/docs"
+      ],
+      "sourceFiles": []
+    },
+    {
+      "file": "openapi.spec.ts",
+      "title": "OpenAPI documentation > the spec describes every route and leaks no configuration secrets",
+      "status": "passed",
+      "routes": [],
+      "endpoints": [
+        "GET /api/openapi.json"
+      ],
+      "sourceFiles": []
+    }
+  ],
+  "byEndpoint": {
+    "DELETE /api/trips/{id}": [
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ],
+    "GET /api/destinations": [
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page"
+    ],
+    "GET /api/destinations/{id}": [
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page"
+    ],
+    "GET /api/destinations/filters": [
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders"
+    ],
+    "GET /api/docs": [
+      "openapi.spec.ts > OpenAPI documentation > swagger ui renders the operations"
+    ],
+    "GET /api/llm-audit": [
+      "business.spec.ts > Voyagenie commercial journeys > route /ai-governance renders",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > audit log records calls without leaking the API key",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "GET /api/openapi.json": [
+      "openapi.spec.ts > OpenAPI documentation > the spec describes every route and leaks no configuration secrets"
+    ],
+    "GET /api/packages": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page"
+    ],
+    "GET /api/trips": [
+      "business.spec.ts > Voyagenie commercial journeys > route /trips renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ],
+    "PATCH /api/trips/{id}": [
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ],
+    "POST /ai/budget": [
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown"
+    ],
+    "POST /ai/chat": [
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > prompt injection is blocked before reaching a provider",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > prompts over the configured length are rejected"
+    ],
+    "POST /ai/itinerary": [
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > audit log records calls without leaking the API key",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > itinerary calls are rate limited per session and hour",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > malformed payloads fail validation instead of erroring",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > rate-limit headers expose the remaining allowance"
+    ],
+    "POST /api/contact": [
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference"
+    ],
+    "POST /api/trips": [
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ],
+    "POST /api/trips/{id}/clone": [
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ]
+  },
+  "bySourceFile": {
+    "frontend/src/api/client.ts": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /ai-governance renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /trips renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page",
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/api/endpoints.ts": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /ai-governance renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /trips renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page",
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/components/AiMetaBar.tsx": [
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/components/Cards.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page"
+    ],
+    "frontend/src/components/Feedback.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/components/Layout.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > contact form blocks an invalid email client-side",
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /about renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /ai-governance renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /assistant renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /budget renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /contact renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /planner renders",
+      "business.spec.ts > Voyagenie commercial journeys > route /trips renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page",
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/components/Markdown.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > route /assistant renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/pages/About.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > route /about renders"
+    ],
+    "frontend/src/pages/Assistant.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > route /assistant renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history"
+    ],
+    "frontend/src/pages/BudgetOptimizer.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > route /budget renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown"
+    ],
+    "frontend/src/pages/Contact.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > contact form blocks an invalid email client-side",
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "business.spec.ts > Voyagenie commercial journeys > route /contact renders"
+    ],
+    "frontend/src/pages/DestinationDetails.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page"
+    ],
+    "frontend/src/pages/Destinations.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders"
+    ],
+    "frontend/src/pages/Governance.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > route /ai-governance renders",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "frontend/src/pages/Home.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders",
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page"
+    ],
+    "frontend/src/pages/MyTrips.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > route /trips renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ],
+    "frontend/src/pages/NotFound.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page"
+    ],
+    "frontend/src/pages/Packages.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders"
+    ],
+    "frontend/src/pages/TripPlanner.tsx": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > route /planner renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ]
+  },
+  "byRoute": {
+    "/": [
+      "business.spec.ts > Voyagenie commercial journeys > hero search leads to a destination detail page",
+      "business.spec.ts > Voyagenie commercial journeys > home page shows the catalogue highlights",
+      "business.spec.ts > Voyagenie commercial journeys > route / renders"
+    ],
+    "/about": [
+      "business.spec.ts > Voyagenie commercial journeys > route /about renders"
+    ],
+    "/ai-governance": [
+      "business.spec.ts > Voyagenie commercial journeys > route /ai-governance renders",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "/api/docs/": [
+      "openapi.spec.ts > OpenAPI documentation > swagger ui renders the operations"
+    ],
+    "/assistant": [
+      "business.spec.ts > Voyagenie commercial journeys > route /assistant renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > a suggested question can be sent from the sidebar",
+      "genai.spec.ts > Voyagenie GenAI journeys > assistant answers and keeps conversation history"
+    ],
+    "/budget": [
+      "business.spec.ts > Voyagenie commercial journeys > route /budget renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > budget optimizer returns a category breakdown"
+    ],
+    "/contact": [
+      "business.spec.ts > Voyagenie commercial journeys > contact form blocks an invalid email client-side",
+      "business.spec.ts > Voyagenie commercial journeys > contact inquiry is accepted and given a reference",
+      "business.spec.ts > Voyagenie commercial journeys > route /contact renders"
+    ],
+    "/destinations": [
+      "business.spec.ts > Voyagenie commercial journeys > an unmatched filter combination shows the empty state",
+      "business.spec.ts > Voyagenie commercial journeys > destination filters narrow the catalogue",
+      "business.spec.ts > Voyagenie commercial journeys > route /destinations renders"
+    ],
+    "/no-such-page": [
+      "business.spec.ts > Voyagenie commercial journeys > unknown route renders the 404 page"
+    ],
+    "/packages": [
+      "business.spec.ts > Voyagenie commercial journeys > a package hands its destination and duration to the planner",
+      "business.spec.ts > Voyagenie commercial journeys > packages can be filtered by travel style",
+      "business.spec.ts > Voyagenie commercial journeys > route /packages renders"
+    ],
+    "/planner": [
+      "business.spec.ts > Voyagenie commercial journeys > route /planner renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > repeating an identical request is served from cache",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted",
+      "guardrails.spec.ts > Voyagenie guardrails and governance > governance page surfaces the audit log and active configuration"
+    ],
+    "/trips": [
+      "business.spec.ts > Voyagenie commercial journeys > route /trips renders",
+      "genai.spec.ts > Voyagenie GenAI journeys > generates an itinerary and saves it to My Trips",
+      "genai.spec.ts > Voyagenie GenAI journeys > My Trips shows the empty state for a fresh session",
+      "genai.spec.ts > Voyagenie GenAI journeys > saved trips can be viewed, renamed, cloned and deleted"
+    ]
+  }
+}
