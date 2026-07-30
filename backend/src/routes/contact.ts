@@ -4,7 +4,7 @@ import { query } from '../db.js';
 
 export const contactRouter = Router();
 
-const inquirySchema = z.object({
+export const inquirySchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(160),
   subject: z.string().trim().max(160).optional(),
