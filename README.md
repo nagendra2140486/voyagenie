@@ -37,7 +37,7 @@ The browser never calls an LLM provider directly, so API keys never reach the cl
 Prerequisites: Node 20.19+ (or 22.12+), Python 3.10+, PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/Cognizant-QEAOrg/voyagenie.git
+git clone https://github.com/Cognizant-FrontierAICyberDefense/voyagenie.git
 cd voyagenie
 cp .env.example .env          # defaults run entirely offline with the mock LLM provider
 
