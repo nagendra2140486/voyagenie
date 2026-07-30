@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { api, callAi, sessionId, uniqueItinerary } from './support';
 
 test.describe('Voyagenie guardrails and governance', () => {
