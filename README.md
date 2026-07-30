@@ -145,6 +145,22 @@ npm run postman                    # API + guardrail assertions via newman
 | `e2e/guardrails.spec.ts` | Injection blocked, prompt too long, invalid payload, rate limit 429 and `x-ratelimit-*` headers, audit log leaks no key, governance page |
 | `e2e/openapi.spec.ts` | OpenAPI spec covers every route and exposes no secrets, Swagger UI renders |
 
+### Spec inventory
+
+[`tests/spec-inventory.json`](tests/spec-inventory.json) lists every spec file, test title and
+tag. Automated test-selection reads it as a closed vocabulary — a selector may only pick tests
+that appear here — so it must match the suite:
+
+```bash
+cd tests
+npm run inventory         # regenerate after adding, renaming or tagging a test
+npm run inventory:check   # non-zero exit if the committed file is stale
+```
+
+Keeping it current is the test leads' responsibility; a stale inventory makes selection fall
+back to running the whole suite. The file carries no timestamp, so it changes only when the
+tests do.
+
 Override the targets with `VOYAGENIE_BASE_URL` (default `http://localhost:5173`) and
 `VOYAGENIE_API_URL` (default `http://localhost:4000`). Each test runs in a fresh browser
 context, so every test gets its own `x-session-id` — trips and hourly rate-limit counters
