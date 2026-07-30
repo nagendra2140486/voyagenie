@@ -1,0 +1,12 @@
+{
+  "name": "voyagenie-tests",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "13.17.0"
+  }
+}
