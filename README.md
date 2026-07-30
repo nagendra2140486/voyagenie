@@ -149,6 +149,31 @@ Override the targets with `VOYAGENIE_BASE_URL` (default `http://localhost:5173`)
 context, so every test gets its own `x-session-id` — trips and hourly rate-limit counters
 never leak between tests.
 
+## Performance
+
+[k6](https://k6.io) covers the critical journey end to end at the API layer. The run is a
+single virtual user for five minutes — a latency baseline for the demo stack, not a stress test.
+
+```bash
+k6 run perf/critical-journeys.js                              # 1 VU, 5 minutes
+k6 run --duration 30s perf/critical-journeys.js               # quick smoke
+k6 run -e VOYAGENIE_API_URL=http://host:4000 perf/critical-journeys.js
+```
+
+Each iteration walks catalogue → filters → destination detail → packages → contact →
+AI itinerary → save trip → assistant → budget → governance audit log, with a per-journey
+`journey_*_ms` trend and thresholds on every step.
+
+Two guardrails shape the script:
+
+- **Rate limits** are per session and hour, so every iteration mints a fresh
+  `x-session-id` (`newSession()`); reusing one id would turn most of the run into 429s.
+- **`llm_cache`** would otherwise serve repeated AI payloads without touching the provider,
+  so AI request bodies carry a unique suffix.
+
+AI thresholds default to `p(95) < 1500ms`, which suits `LLM_PROVIDER=mock`; raise it for a
+real provider with `-e AI_P95_MS=8000`.
+
 ## Demo flow
 
 1. Home → search "Singapore" → open the destination detail page.
