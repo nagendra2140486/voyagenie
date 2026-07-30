@@ -8,7 +8,7 @@ import { consumeRateLimit } from '../services/rateLimit.js';
 
 export const aiRouter = Router();
 
-const itinerarySchema = z.object({
+export const itinerarySchema = z.object({
   destination: z.string().trim().min(2).max(120),
   days: z.number().int().min(1).max(30),
   budget: z.enum(['low', 'medium', 'high']).default('medium'),
@@ -19,7 +19,7 @@ const itinerarySchema = z.object({
   constraints: z.string().trim().max(8000).default(''),
 });
 
-const chatSchema = z.object({
+export const chatSchema = z.object({
   message: z.string().trim().min(1).max(8000),
   history: z
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().max(4000) }))
@@ -27,7 +27,7 @@ const chatSchema = z.object({
     .default([]),
 });
 
-const budgetSchema = z.object({
+export const budgetSchema = z.object({
   destination: z.string().trim().min(2).max(120),
   days: z.number().int().min(1).max(30),
   budget_amount: z.number().positive().max(1_000_000),

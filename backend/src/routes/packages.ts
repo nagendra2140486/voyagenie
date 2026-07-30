@@ -4,7 +4,7 @@ import { query } from '../db.js';
 
 export const packagesRouter = Router();
 
-const listSchema = z.object({
+export const packageFiltersSchema = z.object({
   style: z.string().trim().max(60).optional(),
   maxPrice: z.coerce.number().int().positive().max(100000).optional(),
 });
@@ -14,7 +14,7 @@ const SELECT_PACKAGES = `
   FROM packages p LEFT JOIN destinations d ON d.id = p.destination_id`;
 
 packagesRouter.get('/', async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
+  const parsed = packageFiltersSchema.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ code: 'invalid_filters', message: 'One or more filters are invalid.' });
     return;

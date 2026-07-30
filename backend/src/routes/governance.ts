@@ -8,10 +8,10 @@ import { query } from '../db.js';
 
 export const governanceRouter = Router();
 
-const listSchema = z.object({ limit: z.coerce.number().int().min(1).max(200).default(50) });
+export const auditQuerySchema = z.object({ limit: z.coerce.number().int().min(1).max(200).default(50) });
 
 governanceRouter.get('/llm-audit', async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
+  const parsed = auditQuerySchema.safeParse(req.query);
   const limit = parsed.success ? parsed.data.limit : 50;
   const [entries, summary, usage, cache] = await Promise.all([
     listAudit(limit),

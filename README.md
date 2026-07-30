@@ -132,7 +132,7 @@ no provider spend is incurred.
 cd tests && npm install
 npx playwright install chromium    # once, downloads the browser
 npm run typecheck                  # type-check the specs
-npm test                           # 33 specs: business, GenAI, guardrails
+npm test                           # 35 specs: business, GenAI, guardrails, OpenAPI
 npm run test:ui                    # interactive runner
 npm run report                     # HTML report of the last run
 npm run postman                    # API + guardrail assertions via newman
@@ -143,11 +143,64 @@ npm run postman                    # API + guardrail assertions via newman
 | `e2e/business.spec.ts` | Home, hero search, destination filters and empty state, destination detail, packages and style filter, package → planner handoff, contact form success and validation, every navbar route, 404 |
 | `e2e/genai.spec.ts` | Itinerary generation and save to My Trips, response cache, assistant multi-turn chat and suggestions, budget breakdown, trip view/rename/clone/delete, empty state |
 | `e2e/guardrails.spec.ts` | Injection blocked, prompt too long, invalid payload, rate limit 429 and `x-ratelimit-*` headers, audit log leaks no key, governance page |
+| `e2e/openapi.spec.ts` | OpenAPI spec covers every route and exposes no secrets, Swagger UI renders |
+
+### Spec inventory
+
+[`tests/spec-inventory.json`](tests/spec-inventory.json) lists every spec file, test title and
+tag. Automated test-selection reads it as a closed vocabulary — a selector may only pick tests
+that appear here — so it must match the suite:
+
+```bash
+cd tests
+npm run inventory         # regenerate after adding, renaming or tagging a test
+npm run inventory:check   # non-zero exit if the committed file is stale
+```
+
+Keeping it current is the test leads' responsibility; a stale inventory makes selection fall
+back to running the whole suite. The file carries no timestamp, so it changes only when the
+tests do.
+
+### Coverage map
+
+[`tests/coverage-map.json`](tests/coverage-map.json) answers "which tests exercise this file?".
+It is *recorded*, not inferred: a full run with `VOYAGENIE_COVERAGE=1` observes, per test, the
+routes visited, the API endpoints called, and the frontend source files whose functions actually
+ran (Chromium V8 coverage — Vite dev-serves unbundled modules, so script URLs map straight to
+source paths).
+
+```bash
+cd tests
+npm run coverage:map      # full run against the live stack, rewrites coverage-map.json
+```
+
+```json
+"bySourceFile": { "frontend/src/pages/Packages.tsx": ["business.spec.ts > … > packages can be filtered by travel style", "…"] },
+"byEndpoint":   { "POST /ai/budget": ["genai.spec.ts > … > budget optimizer returns a category breakdown"] },
+"backendOwners": { "/api/packages": "backend/src/routes/packages.ts" }
+```
+
+`backendOwners` is read from the `app.use()` mounts in `backend/src/index.ts`, so a changed
+backend route file resolves to endpoints and from there to tests. Regenerate after adding tests
+or moving routes; a source file absent from `bySourceFile` is a genuine coverage gap, not a
+mapping error. Recording forces a single worker and adds ~15s to the run, so it is opt-in.
 
 Override the targets with `VOYAGENIE_BASE_URL` (default `http://localhost:5173`) and
 `VOYAGENIE_API_URL` (default `http://localhost:4000`). Each test runs in a fresh browser
 context, so every test gets its own `x-session-id` — trips and hourly rate-limit counters
 never leak between tests.
+
+## API documentation
+
+| Service | Swagger UI | Spec |
+| --- | --- | --- |
+| Node backend (`/api/*`, `/ai/*`) | http://localhost:4000/api/docs | http://localhost:4000/api/openapi.json |
+| Python AI service | http://localhost:8000/docs | http://localhost:8000/openapi.json |
+
+The backend spec is generated at startup from the same zod schemas the routes validate with
+([`backend/src/openapi/document.ts`](backend/src/openapi/document.ts)), so request shapes cannot
+drift from the implementation — adding a field to a route schema updates the docs automatically.
+Only response shapes and prose are declared separately.
 
 ## Performance
 

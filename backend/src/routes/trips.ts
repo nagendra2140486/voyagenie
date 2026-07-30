@@ -4,7 +4,7 @@ import { query } from '../db.js';
 
 export const tripsRouter = Router();
 
-const createSchema = z.object({
+export const tripCreateSchema = z.object({
   title: z.string().trim().min(3).max(160),
   destination: z.string().trim().min(2).max(120),
   days: z.number().int().min(1).max(60).optional(),
@@ -14,7 +14,7 @@ const createSchema = z.object({
   itineraryText: z.string().min(1).max(20000),
 });
 
-const updateSchema = z.object({
+export const tripUpdateSchema = z.object({
   title: z.string().trim().min(3).max(160).optional(),
   destination: z.string().trim().min(2).max(120).optional(),
   budget: z.string().trim().max(60).optional(),
@@ -26,7 +26,7 @@ tripsRouter.get('/', async (req, res) => {
 });
 
 tripsRouter.post('/', async (req, res) => {
-  const parsed = createSchema.safeParse(req.body);
+  const parsed = tripCreateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ code: 'invalid_trip', message: parsed.error.issues[0]?.message ?? 'Invalid trip payload.' });
     return;
@@ -53,7 +53,7 @@ tripsRouter.get('/:id', async (req, res) => {
 });
 
 tripsRouter.patch('/:id', async (req, res) => {
-  const parsed = updateSchema.safeParse(req.body);
+  const parsed = tripUpdateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ code: 'invalid_trip', message: 'Invalid update payload.' });
     return;

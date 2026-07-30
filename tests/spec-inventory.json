@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "playwrightVersion": "1.49.1",
+  "projects": [
+    "chromium"
+  ],
+  "totalTests": 35,
+  "specs": [
+    {
+      "file": "business.spec.ts",
+      "tests": [
+        {
+          "title": "home page shows the catalogue highlights",
+          "describe": "Voyagenie commercial journeys",
+          "line": 17,
+          "tags": []
+        },
+        {
+          "title": "hero search leads to a destination detail page",
+          "describe": "Voyagenie commercial journeys",
+          "line": 25,
+          "tags": []
+        },
+        {
+          "title": "destination filters narrow the catalogue",
+          "describe": "Voyagenie commercial journeys",
+          "line": 41,
+          "tags": []
+        },
+        {
+          "title": "an unmatched filter combination shows the empty state",
+          "describe": "Voyagenie commercial journeys",
+          "line": 66,
+          "tags": []
+        },
+        {
+          "title": "packages can be filtered by travel style",
+          "describe": "Voyagenie commercial journeys",
+          "line": 73,
+          "tags": []
+        },
+        {
+          "title": "a package hands its destination and duration to the planner",
+          "describe": "Voyagenie commercial journeys",
+          "line": 83,
+          "tags": []
+        },
+        {
+          "title": "contact inquiry is accepted and given a reference",
+          "describe": "Voyagenie commercial journeys",
+          "line": 92,
+          "tags": []
+        },
+        {
+          "title": "contact form blocks an invalid email client-side",
+          "describe": "Voyagenie commercial journeys",
+          "line": 105,
+          "tags": []
+        },
+        {
+          "title": "route / renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /destinations renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /packages renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /planner renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /assistant renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /budget renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /trips renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /about renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /contact renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "route /ai-governance renders",
+          "describe": "Voyagenie commercial journeys",
+          "line": 117,
+          "tags": []
+        },
+        {
+          "title": "unknown route renders the 404 page",
+          "describe": "Voyagenie commercial journeys",
+          "line": 123,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "file": "genai.spec.ts",
+      "tests": [
+        {
+          "title": "generates an itinerary and saves it to My Trips",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 9,
+          "tags": []
+        },
+        {
+          "title": "repeating an identical request is served from cache",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 26,
+          "tags": []
+        },
+        {
+          "title": "assistant answers and keeps conversation history",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 39,
+          "tags": []
+        },
+        {
+          "title": "a suggested question can be sent from the sidebar",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 55,
+          "tags": []
+        },
+        {
+          "title": "budget optimizer returns a category breakdown",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 61,
+          "tags": []
+        },
+        {
+          "title": "saved trips can be viewed, renamed, cloned and deleted",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 71,
+          "tags": []
+        },
+        {
+          "title": "My Trips shows the empty state for a fresh session",
+          "describe": "Voyagenie GenAI journeys",
+          "line": 99,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "file": "guardrails.spec.ts",
+      "tests": [
+        {
+          "title": "prompt injection is blocked before reaching a provider",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 5,
+          "tags": []
+        },
+        {
+          "title": "prompts over the configured length are rejected",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 16,
+          "tags": []
+        },
+        {
+          "title": "malformed payloads fail validation instead of erroring",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 27,
+          "tags": []
+        },
+        {
+          "title": "itinerary calls are rate limited per session and hour",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 38,
+          "tags": []
+        },
+        {
+          "title": "rate-limit headers expose the remaining allowance",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 59,
+          "tags": []
+        },
+        {
+          "title": "audit log records calls without leaking the API key",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 72,
+          "tags": []
+        },
+        {
+          "title": "governance page surfaces the audit log and active configuration",
+          "describe": "Voyagenie guardrails and governance",
+          "line": 88,
+          "tags": []
+        }
+      ]
+    },
+    {
+      "file": "openapi.spec.ts",
+      "tests": [
+        {
+          "title": "the spec describes every route and leaks no configuration secrets",
+          "describe": "OpenAPI documentation",
+          "line": 22,
+          "tags": []
+        },
+        {
+          "title": "swagger ui renders the operations",
+          "describe": "OpenAPI documentation",
+          "line": 39,
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { query } from '../db.js';
 
 export const destinationsRouter = Router();
 
-const filtersSchema = z.object({
+export const destinationFiltersSchema = z.object({
   q: z.string().trim().max(120).optional(),
   country: z.string().trim().max(120).optional(),
   budget: z.enum(['low', 'medium', 'high']).optional(),
@@ -13,7 +13,7 @@ const filtersSchema = z.object({
 });
 
 destinationsRouter.get('/', async (req, res) => {
-  const parsed = filtersSchema.safeParse(req.query);
+  const parsed = destinationFiltersSchema.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ code: 'invalid_filters', message: 'One or more filters are invalid.' });
     return;

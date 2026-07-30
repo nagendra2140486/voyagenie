@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const NAV_ROUTES = [
   { path: '/', heading: 'Plan the trip you actually want' },

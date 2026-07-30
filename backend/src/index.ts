@@ -2,6 +2,7 @@ import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { config } from './config.js';
 import { sessionMiddleware } from './middleware/session.js';
+import { openApiRouter } from './openapi/router.js';
 import { aiRouter } from './routes/ai.js';
 import { contactRouter } from './routes/contact.js';
 import { destinationsRouter } from './routes/destinations.js';
@@ -24,6 +25,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'voyagenie-backend', provider: config.llm.provider });
 });
 
+app.use('/api', openApiRouter);
 app.use('/api/destinations', destinationsRouter);
 app.use('/api/packages', packagesRouter);
 app.use('/api/trips', tripsRouter);
