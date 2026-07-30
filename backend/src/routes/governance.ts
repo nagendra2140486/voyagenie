@@ -5,6 +5,7 @@ import { auditSummary, listAudit } from '../services/audit.js';
 import { getRateLimitUsage } from '../services/rateLimit.js';
 import { query } from '../db.js';
 
+
 export const governanceRouter = Router();
 
 const listSchema = z.object({ limit: z.coerce.number().int().min(1).max(200).default(50) });
