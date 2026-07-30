@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: voyagenie-db
+    environment:
+      POSTGRES_USER: voyagenie
+      POSTGRES_PASSWORD: voyagenie
+      POSTGRES_DB: voyagenie
+    ports:
+      - '5432:5432'
+    volumes:
+      - voyagenie-db:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U voyagenie']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  voyagenie-db:
