@@ -124,15 +124,30 @@ Sessions are identified by the `x-session-id` header (mock identity — producti
 
 ## Tests
 
+End-to-end tests use [Playwright](https://playwright.dev). All three services and PostgreSQL
+must be running (`scripts/dev.sh`), with `LLM_PROVIDER=mock` so results are deterministic and
+no provider spend is incurred.
+
 ```bash
 cd tests && npm install
-npx cypress run                                          # 12 UI + API specs
-npx newman run postman/Voyagenie.postman_collection.json  # API + guardrail assertions
+npx playwright install chromium    # once, downloads the browser
+npm run typecheck                  # type-check the specs
+npm test                           # 33 specs: business, GenAI, guardrails
+npm run test:ui                    # interactive runner
+npm run report                     # HTML report of the last run
+npm run postman                    # API + guardrail assertions via newman
 ```
 
-Cypress covers the commercial journeys (search, filter, packages, contact) and the GenAI
-journeys plus guardrail negative tests (injection blocked, prompt too long, rate limit 429,
-audit log contains no secrets).
+| Spec | Covers |
+| --- | --- |
+| `e2e/business.spec.ts` | Home, hero search, destination filters and empty state, destination detail, packages and style filter, package → planner handoff, contact form success and validation, every navbar route, 404 |
+| `e2e/genai.spec.ts` | Itinerary generation and save to My Trips, response cache, assistant multi-turn chat and suggestions, budget breakdown, trip view/rename/clone/delete, empty state |
+| `e2e/guardrails.spec.ts` | Injection blocked, prompt too long, invalid payload, rate limit 429 and `x-ratelimit-*` headers, audit log leaks no key, governance page |
+
+Override the targets with `VOYAGENIE_BASE_URL` (default `http://localhost:5173`) and
+`VOYAGENIE_API_URL` (default `http://localhost:4000`). Each test runs in a fresh browser
+context, so every test gets its own `x-session-id` — trips and hourly rate-limit counters
+never leak between tests.
 
 ## Demo flow
 
