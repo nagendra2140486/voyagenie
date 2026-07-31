@@ -61,11 +61,16 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
 9. Write the markdown: verdict first with a one-line justification, stage table, **ticket table**,
    failure attribution, findings that survive, coverage gaps, and a single recommended next
    action.
-10. Append the verdict block last: an HTML comment marker `<!-- prqe-verdict -->` followed by one
-    fenced ```json block, in the schema below. Emit exactly one such block per report and strip
-    backticks from any embedded test name or error message, or the fence closes early.
-11. Publish with the `verdict` report type when green, the `failure` type otherwise. Where those
-    types collide with another stage's document id, note it — the later write wins.
+10. Write the verdict in the schema below to `{report_dir}/verdict.json`, **and** append it to the
+    markdown as an HTML comment marker `<!-- prqe-verdict -->` followed by one fenced ```json
+    block. The file is what CRaaS consumes; the block keeps the verdict readable for anyone
+    looking at the report itself. Emit exactly one such block per report and strip backticks from
+    any embedded test name or error message, or the fence closes early. The two must be byte-for-
+    byte the same object.
+11. Publish with the `verdict` report type when green, the `failure` type otherwise, passing
+    `--json-file {report_dir}/verdict.json` so the verdict lands in `analysis_json` as a real
+    object rather than something CRaaS has to regex out of the markdown. Where those types collide
+    with another stage's document id, note it — the later write wins.
 12. Return the structured output plus the markdown to the orchestrator.
 
 ## Verdict block schema
@@ -110,10 +115,10 @@ because counting them as impacted overstates what the change actually touched.
 - Every failed stage has exactly one attributed cause; every failing test has a ticket id or
   `non_ticket_related`.
 - Every ticket in the map appears in the table and the JSON, including ones with no coverage.
-- Deliverable: one published document, ending in exactly one verdict block, and the markdown
-  returned in-session.
-- Validation: the stage table accounts for all five stages, including the skipped ones, and the
-  verdict block parses as JSON.
+- Deliverable: one published document carrying the markdown (ending in exactly one verdict block)
+  and the same verdict as `analysis_json`, plus the markdown returned in-session.
+- Validation: the stage table accounts for all five stages, including the skipped ones; the
+  verdict block parses as JSON; and the published `analysis_json` equals it.
 
 ## Advice and Pointers
 - The verdict must be readable in five seconds: state it before the detail.

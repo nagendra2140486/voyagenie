@@ -44,12 +44,15 @@ inputs and the rails.
    an empty `--grep` matches every test, turning "nothing to run" into "run everything".
 8. Write and publish the impact analysis (`impact` report type): selection counts, the reasoning
    per test, rails that fired, and the coverage gaps — the changes the selected tests cannot
-   validate.
+   validate. Publish the same content as JSON via `--json-file` (selected tests with their
+   reasons, rails fired, gaps): the API requires `analysis_json`, and the selection is the part
+   CRaaS most needs to query.
 9. Run the selection with `functional.command` and `functional.select_flag`, in
    `functional.working_dir`, with `functional.env` pointing at the deployed URLs.
 10. Write and publish the functional report (`functional` report type): environment, heartbeat
     verdict, selection size, pass/fail/skip counts, duration, every failure with its error, and a
-    short section on what a green run does *not* prove.
+    short section on what a green run does *not* prove. Publish the counts and failures as JSON
+    via `--json-file` as well.
 11. Return the structured output and both markdown documents to the orchestrator.
 
 ## Specifications
@@ -57,7 +60,9 @@ inputs and the rails.
   `coverage_gaps`, `impact_report_id`, `functional_report_id`, `impact_markdown`,
   `functional_markdown`.
 - The number of tests executed must equal the number selected; report any discrepancy.
-- Deliverable: two published documents and both markdowns returned in-session.
+- Deliverable: two published documents, each carrying both its markdown and its JSON, and both
+  markdowns returned in-session.
+- Each `analysis_json` mirrors the structured output; the two must not disagree.
 - Validation: every selected test exists in the inventory, and both publishes succeeded.
 
 ## Advice and Pointers

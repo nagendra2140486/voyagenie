@@ -74,7 +74,9 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
    and the `failure` type otherwise.
 10. Verify every expected report was published: each sub-agent's output must show a successful
     POST. A publish failure means the report is lost, so re-run that stage's publish step rather
-    than reporting success.
+    than reporting success. Every stage publishes both `analysis_markdown` and a populated
+    `analysis_json`; a stage that published `{}` has thrown its structured result away and must
+    republish.
 11. Summarise the run for the user: plan chosen, heartbeat verdict, per-stage outcome, per-ticket
     status, the CRaaS document ids, and the single most actionable finding.
 
@@ -88,7 +90,8 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
 - Every stage that runs produces exactly one CRaaS document, using the report types in
   `reports.types` from the config.
 - Deliverable: a summary to the user plus the CRaaS document ids for the run.
-- Validation: each sub-agent reported a successful publish for its stage.
+- Validation: each sub-agent reported a successful publish for its stage, with a non-empty
+  `analysis_json`.
 
 ## Advice and Pointers
 - Sub-agents are child Devin sessions with their own VMs. They cannot reach a `localhost`
