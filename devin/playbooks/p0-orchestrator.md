@@ -70,15 +70,18 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
    timings.
 9. Run the **Final Analysis** sub-agent with the full markdown of every stage that ran, the
    heartbeat verdict, and the ticket map — it cannot attribute failures to tickets without it.
-   It publishes the config's `verdict` report type when everything is green
-   and the `failure` type otherwise.
+   It returns `green`, `amber` or `red` with a `verdict_reason`, and publishes the config's
+   `verdict` report type for green and amber, the `failure` type for red. Amber means the run
+   found no regression but could not verify something — uncovered code, or a degraded environment;
+   report it as its own outcome rather than rounding it to pass or fail.
 10. Verify every expected report was published: each sub-agent's output must show a successful
     POST. A publish failure means the report is lost, so re-run that stage's publish step rather
     than reporting success. Every stage publishes both `analysis_markdown` and a populated
     `analysis_json`; a stage that published `{}` has thrown its structured result away and must
     republish.
 11. Summarise the run for the user: plan chosen, heartbeat verdict, per-stage outcome, per-ticket
-    status, the CRaaS document ids, and the single most actionable finding.
+    status, the verdict **with its reason**, the CRaaS document ids, and the single most
+    actionable finding.
 
 ## Specifications
 - Stages run strictly sequentially: PR analysis → heartbeat → functional → performance → final.

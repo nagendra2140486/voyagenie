@@ -55,9 +55,24 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
 7. Carry forward the findings that survive a green run: defects the PR analysis named, and the
    coverage gaps the impact analysis reported. A change no test asserts is not validated by a
    green suite, and this is the last place anyone will read that.
-8. Decide the verdict: green only when every stage that ran passed. A skipped stage does not
-   block green, but must be visible in the table. Tickets marked `no_coverage` do not make the
-   run red; they belong in the coverage gaps and the next action.
+8. Decide the verdict — `green`, `amber` or `red` — **and always state its reason**, because red
+   for a failing test and red for uncovered code demand opposite actions (fix the code versus
+   write the test):
+
+   | Situation | Verdict | `verdict_reason` |
+   | --- | --- | --- |
+   | Failures attributed to the diff | `red` | `failures` |
+   | Changed code matching `impact.critical_paths` that no test exercises | `red` | `uncovered_critical` |
+   | Uncovered changed code outside those paths | `amber` | `uncovered_minor` |
+   | Heartbeat unhealthy but no regressions | `amber` | `environment` |
+   | Every changed path covered, every stage passed | `green` | `all_passed` |
+
+   Critical paths come from the config, so the same PR does not change colour between runs. You
+   may **escalate** `amber` to `red` when a changed file is plainly critical and the list missed
+   it — naming the file and the reason in the report — but never de-escalate `red` to `amber`.
+   A ticket whose changed files are in `impact.critical_paths` and whose status is `no_coverage`
+   makes the run `red`: an unverified security fix is not a passing run.
+   A skipped stage does not block green, but must be visible in the table.
 9. Write the markdown: verdict first with a one-line justification, stage table, **ticket table**,
    failure attribution, findings that survive, coverage gaps, and a single recommended next
    action.
@@ -67,7 +82,8 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
     looking at the report itself. Emit exactly one such block per report and strip backticks from
     any embedded test name or error message, or the fence closes early. The two must be byte-for-
     byte the same object.
-11. Publish with the `verdict` report type when green, the `failure` type otherwise, passing
+11. Publish with the `verdict` report type for `green` and `amber`, the `failure` type for `red`,
+    passing
     `--json-file {report_dir}/verdict.json` so the verdict lands in `analysis_json` as a real
     object rather than something CRaaS has to regex out of the markdown. Where those types collide
     with another stage's document id, note it — the later write wins.
@@ -78,7 +94,9 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
 ```json
 {
   "schema_version": 1,
-  "pr_id": "18", "appname": "voyagenie", "commit": "558db74", "verdict": "green",
+  "pr_id": "18", "appname": "voyagenie", "commit": "558db74",
+  "verdict": "green", "verdict_reason": "all_passed",
+  "escalations": [{"from": "amber", "to": "red", "file": "...", "reason": "..."}],
   "tickets": [
     {"ticket_id": "VIT0016042", "status": "passed", "commits": ["1885c73"],
      "files": ["backend/src/routes/contact.ts"],
@@ -89,9 +107,12 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
   "non_ticket_failures": {"count": 0, "tests": []},
   "regression_summary": {"availability": "Pass", "functional_regression": "Pass",
                          "performance_regression": "NA"},
-  "test_case_summary": {"total_impacted": 35, "total_passed": 35, "total_failed": 0,
-                        "selection_mode": "full_suite", "selection_reason": "...",
-                        "rail_added_tests": 0},
+  "test_case_summary": {"total_impacted": 0, "total_mandatory": 7,
+                        "total_rail_escalated": 28, "total_executed": 35,
+                        "total_passed": 35, "total_failed": 0,
+                        "selection_mode": "full_suite", "selection_reason": "..."},
+  "uncovered": [{"path": "backend/src/index.ts", "critical": true,
+                 "reason": "no test asserts the hardening headers"}],
   "failed_tests": [{"test": "...", "error": "...", "ticket_id": "VIT0016042",
                     "attribution": "regression"}],
   "coverage_gaps": ["..."],
@@ -105,13 +126,22 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
 unfixed vulnerability), `functional_regression` from the functional stage, and
 `performance_regression` `NA` when performance did not run.
 
-`test_case_summary.total_impacted` counts only the tests the diff selected. Tests added by a rail
-(mandatory security or guardrail specs that run on every PR) are reported in `rail_added_tests`,
-because counting them as impacted overstates what the change actually touched.
+The four count fields are deliberately separate and must satisfy
+`total_impacted + total_mandatory + total_rail_escalated = total_executed`:
+
+- `total_impacted` — tests the diff actually selected. Zero is a meaningful answer.
+- `total_mandatory` — `impact.mandatory_specs`, standing policy on every PR.
+- `total_rail_escalated` — tests run only because the selector could not map a changed path. This
+  is the selector admitting ignorance, and a number that should shrink as coverage improves;
+  folding it into "mandatory" would hide that.
+- `total_executed` — what ran, so the arithmetic is checkable rather than implied.
 
 ## Specifications
-- Structured output: `verdict` (`green` / `red`), `root_causes`, `stages`, `tickets`,
-  `coverage_gaps`, `next_action`, `report_id`, `final_markdown`.
+- Structured output: `verdict` (`green` / `amber` / `red`), `verdict_reason` (`all_passed` /
+  `failures` / `uncovered_critical` / `uncovered_minor` / `environment`), `root_causes`, `stages`,
+  `tickets`, `uncovered`, `coverage_gaps`, `next_action`, `report_id`, `final_markdown`.
+- Every verdict carries a reason; a colour on its own does not say which action it demands.
+- Every entry in `uncovered` states whether the path is critical and why it is uncovered.
 - Every failed stage has exactly one attributed cause; every failing test has a ticket id or
   `non_ticket_related`.
 - Every ticket in the map appears in the table and the JSON, including ones with no coverage.
@@ -140,6 +170,8 @@ because counting them as impacted overstates what the change actually touched.
 - Do not report green when a stage errored — an error is not a skip.
 - Do not attribute a failure to flake without evidence.
 - Do not report a ticket as `passed` when no test exercises the files it changed.
+- Do not de-escalate a `red` to `amber`, and do not issue a verdict without its reason.
+- Do not treat uncovered critical code as green because nothing failed — nothing ran.
 - Do not drop a failure that maps to no ticket; report it as non-ticket-related.
 - Do not emit more than one fenced `json` block, or place the verdict block anywhere but last.
 - Do not omit a stage from the table because it was skipped.

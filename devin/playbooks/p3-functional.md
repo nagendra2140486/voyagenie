@@ -27,12 +27,24 @@ inputs and the rails.
    tests that exist) and `impact.coverage_map` (recorded evidence of what each test exercises).
    Where they are null, fall back to `impact.path_conventions` and lower your confidence
    accordingly.
-4. Apply the deterministic rails first:
-   - any changed path matching `impact.force_full` ⇒ full suite;
-   - any changed path with no mapping and not in `impact.low_signal` ⇒ full suite;
-   - `impact.mandatory_specs` are always included, whatever the diff touched;
-   - paths under `impact.unmapped_paths` get a representative test **and** an explicit
-     coverage-gap entry, never a pretended mapping.
+4. Apply the deterministic rails first. An unmapped path is classified, not blanket-escalated —
+   "the selector cannot see this file" and "this file is harmless" are different findings:
+
+   | Changed path | Tests run | Reported as |
+   | --- | --- | --- |
+   | `impact.force_full` | full suite | — |
+   | `impact.low_signal` | none | `no_impact` |
+   | `impact.unmapped_paths` | mandatory specs + one representative test | **uncovered** |
+   | no mapping, matches `impact.critical_paths` | full suite | **uncovered, critical** |
+   | no mapping, anything else | full suite | **uncovered** |
+
+   - `impact.mandatory_specs` are always included, whatever the diff touched — an app-code change
+     never runs zero tests;
+   - a path never gets a pretended mapping: where the evidence is missing, the report says so.
+
+   Every uncovered path is listed for the final analysis with `critical: true|false` from
+   `impact.critical_paths`, because uncovered critical code makes the run red while uncovered
+   minor code makes it amber.
 5. Within those rails, select the tests the diff justifies: join changed backend files to the
    endpoints they own (via `impact.backend_mounts`) and then to the tests that called those
    endpoints; join changed frontend files through the coverage map's per-file evidence. Record
@@ -57,8 +69,11 @@ inputs and the rails.
 
 ## Specifications
 - Structured output: `selected`, `total`, `passed`, `failed`, `skipped`, `fallback_reason`,
+  `impacted`, `mandatory`, `rail_escalated`, `uncovered` (each with `path`, `critical`, `reason`),
   `coverage_gaps`, `impact_report_id`, `functional_report_id`, `impact_markdown`,
   `functional_markdown`.
+- `impacted + mandatory + rail_escalated` equals the number of tests executed, so the final
+  report's counts are checkable rather than implied.
 - The number of tests executed must equal the number selected; report any discrepancy.
 - Deliverable: two published documents, each carrying both its markdown and its JSON, and both
   markdowns returned in-session.
