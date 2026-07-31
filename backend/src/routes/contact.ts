@@ -28,8 +28,3 @@ contactRouter.post('/', async (req, res) => {
   );
   res.status(201).json({ inquiry });
 });
-
-contactRouter.get('/', async (_req, res) => {
-  const rows = await query('SELECT * FROM contact_inquiries ORDER BY created_at DESC LIMIT 50');
-  res.json({ count: rows.length, inquiries: rows });
-});
