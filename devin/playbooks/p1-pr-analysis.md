@@ -1,0 +1,72 @@
+Playbook: PRQE PR Analysis (P1)
+
+> Mirror of the playbook stored in Devin, kept here for review and history.
+> Editing this file changes nothing about a run — apply the change in Devin too.
+
+
+## Overview
+Reads a pull request's commits and full diff, judges risk, names likely defects, and recommends
+which suites the orchestrator should run. Publishes its markdown to the CRaaS PR QE Impact API
+and returns it to the orchestrator. Analysis only — it runs no tests and touches no environment.
+
+Repository-independent: read the repo's `.prqe/config.yaml` for report types, force-full paths
+and low-signal paths rather than assuming any layout.
+
+## What's Needed From User
+- `pr_id`, `repository`, `appname`
+- Optional: the orchestrator's ticket map (`ticket -> commits -> changed files`)
+- Optional: `commit` (the deployed SHA), `environment`
+
+## Procedure
+1. Clone the repository and read `.prqe/config.yaml`.
+2. Establish the change set against the merge base, not the branch tip:
+   `git diff --merge-base origin/<base> origin/<head>`. Also collect the commit list
+   (`--no-merges`, with per-commit stats) and how far the branch is behind base.
+3. Read the full diff. For each changed file record the layer it belongs to and what actually
+   changed — text, logic, schema, configuration, dependency.
+4. Classify each commit against its real content. Call out commits that are empty, whose message
+   misdescribes the change, or that do the opposite of what they claim.
+5. Identify likely defects from the diff itself: debug or placeholder text left in user-visible
+   strings, inverted conditions, dropped error handling, widened permissions, secrets, changes
+   to validation or authentication. Quote file and line.
+6. Judge risk as low / medium / high from blast radius, not from line count. A one-line change to
+   a config value or an auth check is not low risk.
+7. Recommend each suite with a reason:
+   - heartbeat — always `true`.
+   - functional — `true` unless every changed path is in the config's `low_signal` list.
+   - performance — `true` only when a changed path matches `performance.triggers`, or the diff
+     plausibly affects latency (queries, loops, payload size, caching, dependencies).
+   Anything matching `impact.force_full` also means functional `true` with full-suite scope.
+8. Write the markdown report: context table, change set, commit table **with each commit's ticket
+   id**, the list of tickets in the PR, findings, and the recommendation table with reasons. Take
+   the ids from the orchestrator's ticket map when supplied; otherwise match `\bVIT\d{5,}\b` in
+   each commit's title and body. A commit with no id is reported as untracked rather than being
+   attached to the nearest ticket — the final analysis relies on that distinction.
+9. Publish it using the config's publisher with the `pr_analysis` report type. Confirm the POST
+   succeeded — a failed publish means the report is lost.
+10. Return the structured output plus the markdown to the orchestrator.
+
+## Specifications
+- Structured output: `risk`, `recommend.heartbeat`, `recommend.functional`,
+  `recommend.performance`, `findings`, `report_id`, `analysis_markdown`.
+- Every ticket id found in the commits appears in the report, and every commit is either mapped
+  to a ticket or explicitly untracked.
+- The recommendation must be justified by named files, never by line count alone.
+- Deliverable: one published `pr_analysis` document and the markdown returned in-session.
+- Validation: the publish response returned success and a document id.
+
+## Advice and Pointers
+- Diff against the merge base. Diffing against the base branch tip attributes other people's
+  commits to this PR.
+- A branch far behind its base is worth reporting: the merge result is a combination neither
+  side has tested.
+- Findings that no test can catch are the most valuable output here — the later stages can only
+  report on what the suite asserts.
+- Keep the report readable by someone who has not seen the diff: quote the changed line.
+
+## Forbidden Actions
+- Do not run tests, start services or touch the deployed environment.
+- Do not modify the repository or comment on the pull request.
+- Do not recommend the full suite by default to be safe — that defeats selection; use the
+  config's force-full and low-signal lists to decide.
+- Do not report a publish as successful without the API's success response.

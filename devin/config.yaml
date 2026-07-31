@@ -27,9 +27,9 @@ services:
     health: /health
 
 heartbeat:
-  script: ops/heartbeat/heartbeat.py
+  script: devin/tools/heartbeat.py
   command: >-
-    python3 ops/heartbeat/heartbeat.py
+    python3 devin/tools/heartbeat.py
     --backend-url {backend_url} --frontend-url {frontend_url} --ai-url {ai_url}
     --run-id {run_id} --appname voyagenie --commit {commit}
     --out-dir {report_dir}
@@ -39,7 +39,7 @@ heartbeat:
 
 publisher:
   command: >-
-    python3 ops/reporting/publish_report.py --file {file} --reporttype {reporttype}
+    python3 devin/tools/publish_report.py --file {file} --reporttype {reporttype}
     --pr-id {pr_id} --appname voyagenie
     --repository https://github.com/Cognizant-FrontierAICyberDefense/voyagenie/
 
@@ -96,12 +96,11 @@ performance:
 
 reports:
   dir: reports/{run_id}
-  # CRaaS accepts a closed enum; `heartbeat` does not exist yet, so it shares verdict-report.
   types:
     pr_analysis: prqe-analysis
     impact: impact-analysis
     functional: regression-report
     performance: perf-report
-    heartbeat: verdict-report
+    heartbeat: heartbeat-report
     verdict: verdict-report
     failure: failure-analysis

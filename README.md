@@ -229,12 +229,12 @@ real provider with `-e AI_P95_MS=8000`.
 
 ## Heartbeat gate
 
-`ops/heartbeat/heartbeat.py` is the post-deploy availability gate: it runs after a build is
+`devin/tools/heartbeat.py` is the post-deploy availability gate: it runs after a build is
 deployed and before the functional or performance suites, so their failures mean "the code is
 wrong" rather than "the deploy is broken". Standard library only, read-only, under a minute.
 
 ```bash
-python3 ops/heartbeat/heartbeat.py \
+python3 devin/tools/heartbeat.py \
   --backend-url http://localhost:4000 --frontend-url http://localhost:5173 --ai-url http://localhost:8000 \
   --run-id local --expect-provider mock --expect-api-key false --out-dir reports/local
 ```
@@ -253,14 +253,20 @@ Exit codes: `0` healthy, `1` a check failed, `2` the environment never became re
 deploy rather than blaming the tests). Slow-but-correct responses are reported as `warn` unless
 `--strict`. Writes `heartbeat.json`, `heartbeat.md` and JUnit XML to `--out-dir`.
 
-`ops/reporting/publish_report.py` posts any of those markdown reports to the CRaaS PR QE
+`devin/tools/publish_report.py` posts any of those markdown reports to the CRaaS PR QE
 Impact API, keeping the payload shape and report-type vocabulary in one place:
 
 ```bash
-python3 ops/reporting/publish_report.py --file reports/local/heartbeat.md \
-  --reporttype verdict-report --pr-id 12 \
+python3 devin/tools/publish_report.py --file reports/local/heartbeat.md \
+  --reporttype heartbeat-report --pr-id 12 \
   --appname voyagenie --repository https://github.com/Cognizant-FrontierAICyberDefense/voyagenie/
 ```
+
+The API requires `analysis_json` alongside the markdown. The script fills it from the report's own
+`<!-- prqe-verdict -->` fenced block when there is one, `--json-file` when given, and `{}`
+otherwise, so a stage with nothing structured to say still publishes. 5xx responses are retried
+with backoff — the Cosmos write path returns intermittent 500s — while 4xx fails immediately,
+since a rejected document is wrong rather than unlucky.
 
 `--appname` and `--repository` have no defaults (or set `CRAAS_APPNAME` / `CRAAS_REPOSITORY`):
 the script is copied between repositories, and document ids are `{appname}_{reporttype}_{pr_id}`,
@@ -268,7 +274,7 @@ so a stale default would file this app's reports under another app's id.
 
 ## PRQE run configuration
 
-`.prqe/config.yaml` describes this repository to the shared PRQE playbooks — PR analysis,
+`devin/config.yaml` describes this repository to the shared PRQE playbooks — PR analysis,
 heartbeat, functional, performance and final analysis. Those playbooks are used across
 repositories and name nothing repo-specific, so anything they need to know about the layout is
 declared here: the heartbeat and publisher commands, the spec inventory and coverage map used
@@ -280,11 +286,11 @@ suite, which is exactly the silent failure the selection logic is meant to avoid
 
 ### Ticket attribution
 
-`ops/prqe/tickets.py` maps a PR's remediation tickets to the files they changed, so the final
+`devin/tools/tickets.py` maps a PR's remediation tickets to the files they changed, so the final
 verdict can say which ticket a failing test belongs to:
 
 ```bash
-python3 ops/prqe/tickets.py --repo . --base origin/main --head HEAD --out tickets.json
+python3 devin/tools/tickets.py --repo . --base origin/main --head HEAD --out tickets.json
 # VIT0016042: 1 commit(s), 2 file(s) -> backend/src/openapi/document.ts, backend/src/routes/contact.ts
 ```
 

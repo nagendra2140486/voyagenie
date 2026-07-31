@@ -7,7 +7,7 @@ suites run, so their failures mean "the code is wrong" rather than "the deploy i
 Read-only: no request here mutates data, so the suites that follow start from a clean
 baseline. Standard library only, so it runs anywhere Python 3.10+ exists.
 
-    python3 ops/heartbeat/heartbeat.py \
+    python3 devin/tools/heartbeat.py \
         --backend-url https://qa-api.example.com \
         --frontend-url https://qa.example.com \
         --ai-url https://qa-ai.example.com \
@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urljoin, urlparse
 
-DEFAULTS = json.loads((Path(__file__).parent / "expectations.json").read_text())
+DEFAULTS = json.loads((Path(__file__).parent / "heartbeat-expectations.json").read_text())
 
 Status = Literal["pass", "fail", "warn", "skip"]
 
