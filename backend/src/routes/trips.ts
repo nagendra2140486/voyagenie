@@ -28,7 +28,7 @@ tripsRouter.get('/', async (req, res) => {
 tripsRouter.post('/', async (req, res) => {
   const parsed = tripCreateSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ code: 'invalid_trip', message: parsed.error.issues[0]?.message ?? 'Invalid trip payload.' });
+    res.status(400).json({ code: 'invalid_trip', message: parsed.error.issues[0]?.message ?? 'Invalid trip payload details.' });
     return;
   }
   const t = parsed.data;
