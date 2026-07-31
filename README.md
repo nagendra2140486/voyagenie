@@ -258,8 +258,25 @@ Impact API, keeping the payload shape and report-type vocabulary in one place:
 
 ```bash
 python3 ops/reporting/publish_report.py --file reports/local/heartbeat.md \
-  --reporttype verdict-report --pr-id 12
+  --reporttype verdict-report --pr-id 12 \
+  --appname voyagenie --repository https://github.com/Cognizant-FrontierAICyberDefense/voyagenie/
 ```
+
+`--appname` and `--repository` have no defaults (or set `CRAAS_APPNAME` / `CRAAS_REPOSITORY`):
+the script is copied between repositories, and document ids are `{appname}_{reporttype}_{pr_id}`,
+so a stale default would file this app's reports under another app's id.
+
+## PRQE run configuration
+
+`.prqe/config.yaml` describes this repository to the shared PRQE playbooks — PR analysis,
+heartbeat, functional, performance and final analysis. Those playbooks are used across
+repositories and name nothing repo-specific, so anything they need to know about the layout is
+declared here: the heartbeat and publisher commands, the spec inventory and coverage map used
+for test selection, the force-full and low-signal path lists, the test and performance commands,
+and the CRaaS report type for each stage.
+
+Keep it current when paths move. A wrong path there makes a stage skip or fall back to the full
+suite, which is exactly the silent failure the selection logic is meant to avoid.
 
 ## Demo flow
 

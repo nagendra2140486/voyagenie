@@ -23,7 +23,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_ENDPOINT = "https://prqe-impact-api-frdubhcxh0aubjdz.canadacentral-01.azurewebsites.net/prqe-analysis"
-DEFAULT_REPOSITORY = "https://github.com/Cognizant-FrontierAICyberDefense/voyagenie/"
 
 # Enforced server-side; listed here so a wrong value fails locally instead of as a 422.
 REPORT_TYPES = (
@@ -53,8 +52,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--file", required=True, type=Path, help="Markdown report to publish")
     parser.add_argument("--reporttype", required=True, help=f"One of: {', '.join(REPORT_TYPES)}")
     parser.add_argument("--pr-id", required=True)
-    parser.add_argument("--appname", default="voyagenie")
-    parser.add_argument("--repository", default=os.environ.get("CRAAS_REPOSITORY", DEFAULT_REPOSITORY))
+    # No app or repository default: this script is copied between repositories, and a stale
+    # default would file one app's reports under another's document id.
+    parser.add_argument("--appname", default=os.environ.get("CRAAS_APPNAME"), required="CRAAS_APPNAME" not in os.environ)
+    parser.add_argument("--repository", default=os.environ.get("CRAAS_REPOSITORY"), required="CRAAS_REPOSITORY" not in os.environ)
     parser.add_argument("--endpoint", default=os.environ.get("CRAAS_API_URL", DEFAULT_ENDPOINT))
     args = parser.parse_args(argv)
 
