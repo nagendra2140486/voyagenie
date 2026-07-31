@@ -220,7 +220,14 @@ class Heartbeat:
 
         for endpoint in surface.get("endpoints", []):
             url = f"{self.base(service)}{endpoint['path']}"
-            response = fetch(url, method=endpoint.get("method", "GET"), headers=endpoint.get("headers"))
+            headers = dict(endpoint.get("headers") or {})
+            body = None
+            if "json_body" in endpoint:
+                # Only for payloads that are rejected before reaching the database: a heartbeat
+                # that writes application data corrupts the suites it is meant to gate.
+                body = json.dumps(endpoint["json_body"]).encode()
+                headers.setdefault("Content-Type", "application/json")
+            response = fetch(url, method=endpoint.get("method", "GET"), headers=headers, body=body)
             expected = endpoint.get("expect_status", 200)
             ok = response.status == expected
             for path, value in (endpoint.get("expect_json") or {}).items():
