@@ -33,7 +33,9 @@ and low-signal paths rather than assuming any layout.
    a config value or an auth check is not low risk.
 7. Recommend each suite with a reason:
    - heartbeat — always `true`.
-   - functional — `true` unless every changed path is in the config's `low_signal` list.
+   - functional — `true` unless every changed path is in the config's `low_signal` list. Name any
+     changed path that matches `impact.critical_paths`: uncovered critical code makes the run red,
+     so the final analysis needs it flagged from the start.
    - performance — `true` only when a changed path matches `performance.triggers`, or the diff
      plausibly affects latency (queries, loops, payload size, caching, dependencies).
    Anything matching `impact.force_full` also means functional `true` with full-suite scope.

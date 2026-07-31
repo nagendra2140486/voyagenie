@@ -63,6 +63,17 @@ impact:
   # Always run, whatever the diff touched.
   mandatory_specs:
     - e2e/guardrails.spec.ts
+  # Code where "no test covers this" is a red verdict rather than a note: a change here that
+  # nothing asserts is unverified, and for a security remediation that is the finding itself.
+  # Declared rather than judged per run, so the same PR does not change colour between runs.
+  critical_paths:
+    - backend/src/index.ts
+    - backend/src/config.ts
+    - backend/src/routes/**
+    - ai-service/app/guardrails.py
+    - ai-service/app/providers/**
+    - db/*.sql
+    - .env.example
   # Heartbeat only; no functional signal to gain.
   low_signal:
     - "**/*.md"
