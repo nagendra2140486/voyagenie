@@ -278,6 +278,22 @@ and the CRaaS report type for each stage.
 Keep it current when paths move. A wrong path there makes a stage skip or fall back to the full
 suite, which is exactly the silent failure the selection logic is meant to avoid.
 
+### Ticket attribution
+
+`ops/prqe/tickets.py` maps a PR's remediation tickets to the files they changed, so the final
+verdict can say which ticket a failing test belongs to:
+
+```bash
+python3 ops/prqe/tickets.py --repo . --base origin/main --head HEAD --out tickets.json
+# VIT0016042: 1 commit(s), 2 file(s) -> backend/src/openapi/document.ts, backend/src/routes/contact.ts
+```
+
+Ids are matched as `VIT` + digits anywhere in a commit's title or body, rather than by parsing the
+`fix(...)` scope: CRaaS writes `fix(VIT0015739): ...` in some repos and
+`fix(security): VIT0016042 - ...` in others, and scope-parsing yields `security` for the second.
+Commits with no id collect under `_untracked`, which is what lets a failure be reported as
+non-ticket-related instead of being attached to the nearest ticket.
+
 ## Demo flow
 
 1. Home → search "Singapore" → open the destination detail page.
