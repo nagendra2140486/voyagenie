@@ -316,17 +316,6 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/contact',
-  operationId: 'listInquiries',
-  tags: ['Contact'],
-  summary: 'List the 50 most recent inquiries',
-  responses: {
-    200: { description: 'Recent inquiries.', ...json(z.object({ count: z.number().int(), inquiries: z.array(z.record(z.unknown())) })) },
-  },
-});
-
-registry.registerPath({
-  method: 'get',
   path: '/api/llm-audit',
   operationId: 'getLlmAudit',
   tags: ['Governance'],

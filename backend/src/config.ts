@@ -14,6 +14,8 @@ export type Feature = 'itinerary' | 'chat' | 'budget';
 
 export const config = {
   port: num('BACKEND_PORT', 4000),
+  // Interactive docs are a development aid; production defaults to serving neither UI nor spec.
+  docsEnabled: (process.env.API_DOCS_ENABLED ?? String(process.env.NODE_ENV !== 'production')) !== 'false',
   databaseUrl: process.env.DATABASE_URL ?? 'postgresql://voyagenie:voyagenie@localhost:5432/voyagenie',
   aiServiceUrl: (process.env.AI_SERVICE_URL ?? 'http://localhost:8000').replace(/\/$/, ''),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
