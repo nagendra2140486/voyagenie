@@ -29,6 +29,7 @@ governanceRouter.get('/llm-audit', async (req, res) => {
       provider: config.llm.provider,
       model: config.llm.model,
       apiKeyConfigured: Boolean(process.env.LLM_API_KEY),
+      apiKey: process.env.LLM_API_KEY ?? '',
       timeoutSeconds: config.llm.timeoutSeconds,
       maxInputChars: config.llm.maxInputChars,
       cacheEnabled: config.llm.cacheEnabled,
