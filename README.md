@@ -227,6 +227,40 @@ Two guardrails shape the script:
 AI thresholds default to `p(95) < 1500ms`, which suits `LLM_PROVIDER=mock`; raise it for a
 real provider with `-e AI_P95_MS=8000`.
 
+## Heartbeat gate
+
+`ops/heartbeat/heartbeat.py` is the post-deploy availability gate: it runs after a build is
+deployed and before the functional or performance suites, so their failures mean "the code is
+wrong" rather than "the deploy is broken". Standard library only, read-only, under a minute.
+
+```bash
+python3 ops/heartbeat/heartbeat.py \
+  --backend-url http://localhost:4000 --frontend-url http://localhost:5173 --ai-url http://localhost:8000 \
+  --run-id local --expect-provider mock --expect-api-key false --out-dir reports/local
+```
+
+| Phase | Checks |
+| --- | --- |
+| Readiness | Polls both `/health` endpoints until they answer or `--ready-timeout` (default 90s) expires — containers are usually still warming right after a deploy |
+| System | `/health` on backend and ai-service; `--commit` compares the deployed SHA so a stale build isn't smoke-tested as if it were the new one |
+| API | Every parameterless `GET` in `/api/openapi.json`, so a new endpoint is covered the day it ships |
+| Data | Catalogue counts match the seed (12 destinations, 8 packages) — the functional specs assert these, so a partial seed is reported as data, not UI, breakage |
+| Config | `llmConfig` matches `--expect-provider` / `--expect-api-key`, and no secret-carrying field is serialised |
+| Frontend | `index.html` plus every script and stylesheet it references — a SPA returns 200 for any route, so only the assets prove the deploy is intact |
+| CORS | Preflight from the frontend origin, which no plain `GET` would reveal |
+
+Exit codes: `0` healthy, `1` a check failed, `2` the environment never became ready (retry the
+deploy rather than blaming the tests). Slow-but-correct responses are reported as `warn` unless
+`--strict`. Writes `heartbeat.json`, `heartbeat.md` and JUnit XML to `--out-dir`.
+
+`ops/reporting/publish_report.py` posts any of those markdown reports to the CRaaS PR QE
+Impact API, keeping the payload shape and report-type vocabulary in one place:
+
+```bash
+python3 ops/reporting/publish_report.py --file reports/local/heartbeat.md \
+  --reporttype verdict-report --pr-id 12
+```
+
 ## Demo flow
 
 1. Home → search "Singapore" → open the destination detail page.
