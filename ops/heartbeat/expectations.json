@@ -1,8 +1,0 @@
-{
-  "seedBaseline": {
-    "destinations": 12,
-    "packages": 8
-  },
-  "latencyBudgetMs": 2000,
-  "maxAssetsProbed": 20
-}
