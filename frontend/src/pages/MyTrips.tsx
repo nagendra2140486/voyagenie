@@ -49,8 +49,8 @@ export const MyTrips = () => {
       <div className="page-head">
         <div className="container">
           <div className="eyebrow">My Trips</div>
-          <h1>Saved itineraries and budgets</h1>
-          <p>Everything you save is persisted in PostgreSQL against your browser session.</p>
+          <h1>Saved Itineraries and Budgets</h1>
+          <p>Everything you save is persisted in DB against your browser session.</p>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export const MyTrips = () => {
                   Open AI Trip Planner
                 </Link>
                 <Link className="btn btn--ghost" to="/budget">
-                  Open AI Budget Optimizer
+                  Open AI Budget-Optimizer
                 </Link>
               </div>
             </div>
