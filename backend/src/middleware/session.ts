@@ -4,6 +4,13 @@ import { query } from '../db.js';
 
 const SESSION_HEADER = 'x-session-id';
 
+/**
+ * A client-supplied session id is persisted and echoed back in a response header, so it is
+ * untrusted input on an output path. Only canonical UUIDs are accepted; anything else is
+ * replaced with a freshly generated id.
+ */
+const SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 declare module 'express-serve-static-core' {
   interface Request {
     sessionId: string;
@@ -16,7 +23,7 @@ declare module 'express-serve-static-core' {
  */
 export const sessionMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const incoming = req.header(SESSION_HEADER);
-  const sessionId = incoming && incoming.length <= 64 ? incoming : `anon-${randomUUID()}`;
+  const sessionId = incoming && SESSION_ID_PATTERN.test(incoming) ? incoming : randomUUID();
   req.sessionId = sessionId;
   res.setHeader(SESSION_HEADER, sessionId);
   try {
