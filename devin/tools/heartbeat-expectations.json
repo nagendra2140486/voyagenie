@@ -1,8 +1,41 @@
 {
-  "seedBaseline": {
-    "destinations": 12,
-    "packages": 8
+  "app": "voyagenie",
+  "latency_budget_ms": 2000,
+  "services": {
+    "backend": {
+      "health": "/health",
+      "expect_json": {"status": "ok"},
+      "commit_field": "commit"
+    },
+    "ai-service": {
+      "health": "/health"
+    }
   },
-  "latencyBudgetMs": 2000,
-  "maxAssetsProbed": 20
+  "api_surface": {
+    "service": "backend",
+    "from_openapi": "/api/openapi.json"
+  },
+  "data_baselines": [
+    {"name": "destinations seed baseline", "path": "/api/destinations", "field": "count", "expected": 12},
+    {"name": "packages seed baseline", "path": "/api/packages", "field": "count", "expected": 8}
+  ],
+  "config_checks": [
+    {
+      "name": "llm-audit reachable",
+      "path": "/api/llm-audit",
+      "secret_scan": true,
+      "secret_markers": ["LLM_API_KEY"],
+      "expect": [
+        {"name": "llm provider as expected", "field": "llmConfig.provider", "from_flag": "provider"},
+        {"name": "llm api key configured", "field": "llmConfig.apiKeyConfigured", "from_flag": "api_key", "as_bool": true}
+      ]
+    }
+  ],
+  "frontend": {
+    "probe_assets": true,
+    "max_assets": 20
+  },
+  "cors": {
+    "path": "/api/destinations"
+  }
 }

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Post-deploy availability gate for Voyagenie.
+"""Post-deploy availability gate.
 
 Verifies a deployed environment is actually serving before functional or performance
 suites run, so their failures mean "the code is wrong" rather than "the deploy is broken".
 
-Read-only: no request here mutates data, so the suites that follow start from a clean
-baseline. Standard library only, so it runs anywhere Python 3.10+ exists.
+Every check is declared in `heartbeat-expectations.json` beside this file, so the same script
+runs against any application: copy the folder, rewrite the expectations, change nothing here.
+
+Read-only by default: no declared request may mutate data, so the suites that follow start from
+a clean baseline. Standard library only, so it runs anywhere Python 3.10+ exists.
 
     python3 devin/tools/heartbeat.py \
         --backend-url https://qa-api.example.com \
         --frontend-url https://qa.example.com \
-        --ai-url https://qa-ai.example.com \
         --run-id craas-1234 --out-dir reports/craas-1234
 
 Exit codes: 0 healthy (warnings allowed), 1 one or more checks failed, 2 never became ready.
@@ -34,9 +36,11 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urljoin, urlparse
 
-DEFAULTS = json.loads((Path(__file__).parent / "heartbeat-expectations.json").read_text())
+DEFAULT_EXPECTATIONS = Path(__file__).parent / "heartbeat-expectations.json"
 
 Status = Literal["pass", "fail", "warn", "skip"]
+
+SECRET_FIELD = re.compile(r'"(\w*(?:api_?key|secret|token|password))"\s*:\s*"', re.IGNORECASE)
 
 
 @dataclass
@@ -58,23 +62,41 @@ class Response:
     error: str | None = None
 
     def json(self) -> Any:
-        return json.loads(self.body)
+        try:
+            return json.loads(self.body)
+        except (json.JSONDecodeError, ValueError):
+            return {}
 
 
-def fetch(url: str, method: str = "GET", headers: dict[str, str] | None = None, timeout: float = 15.0) -> Response:
-    request = urllib.request.Request(url, method=method, headers=headers or {})
+def fetch(
+    url: str,
+    method: str = "GET",
+    headers: dict[str, str] | None = None,
+    body: bytes | None = None,
+    timeout: float = 15.0,
+) -> Response:
+    request = urllib.request.Request(url, method=method, headers=headers or {}, data=body)
     started = time.perf_counter()
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            body = response.read()
+            payload = response.read()
             elapsed = int((time.perf_counter() - started) * 1000)
-            return Response(response.status, body, {k.lower(): v for k, v in response.headers.items()}, elapsed)
+            return Response(response.status, payload, {k.lower(): v for k, v in response.headers.items()}, elapsed)
     except urllib.error.HTTPError as error:
         elapsed = int((time.perf_counter() - started) * 1000)
         return Response(error.code, error.read(), {k.lower(): v for k, v in error.headers.items()}, elapsed)
     except Exception as error:  # noqa: BLE001 - any transport failure is a check failure, not a crash
         elapsed = int((time.perf_counter() - started) * 1000)
         return Response(0, b"", {}, elapsed, error=f"{type(error).__name__}: {error}")
+
+
+def dig(payload: Any, path: str) -> Any:
+    """Read a dotted path out of a decoded JSON body, returning None rather than raising."""
+    for part in path.split("."):
+        if not isinstance(payload, dict) or part not in payload:
+            return None
+        payload = payload[part]
+    return payload
 
 
 class AssetParser(HTMLParser):
@@ -94,14 +116,14 @@ class AssetParser(HTMLParser):
 
 @dataclass
 class Heartbeat:
-    backend_url: str
-    frontend_url: str
-    ai_url: str
+    expectations: dict[str, Any]
+    urls: dict[str, str]
     commit: str | None = None
-    expect_provider: str | None = None
-    expect_api_key: bool | None = None
-    budget_ms: int = DEFAULTS["latencyBudgetMs"]
+    expected: dict[str, str] = field(default_factory=dict)
+    budget_ms: int = 2000
     checks: list[Check] = field(default_factory=list)
+
+    # -- recording ---------------------------------------------------------------------
 
     def record(
         self,
@@ -124,9 +146,21 @@ class Heartbeat:
     def skip(self, name: str, category: str, reason: str) -> None:
         self.checks.append(Check(name, category, "skip", reason))
 
+    def base(self, service: str) -> str | None:
+        return self.urls.get(service)
+
+    # -- phases ------------------------------------------------------------------------
+
     def wait_until_ready(self, deadline_seconds: int) -> bool:
         """Containers are often still warming right after a deploy; poll before judging."""
-        targets = {"backend": f"{self.backend_url}/health", "ai-service": f"{self.ai_url}/health"}
+        targets = {
+            name: f"{self.base(name)}{spec['health']}"
+            for name, spec in self.expectations.get("services", {}).items()
+            if spec.get("health") and self.base(name)
+        }
+        if not targets:
+            return True
+
         deadline = time.monotonic() + deadline_seconds
         pending = dict(targets)
         while pending and time.monotonic() < deadline:
@@ -140,122 +174,169 @@ class Heartbeat:
                 f"{service} reachable",
                 "readiness",
                 service not in pending,
-                "responded to /health" if service not in pending else f"no 200 within {deadline_seconds}s",
+                "responded to health path" if service not in pending else f"no 200 within {deadline_seconds}s",
                 url=url,
             )
         return not pending
 
     def check_health(self) -> None:
-        response = fetch(f"{self.backend_url}/health")
-        ok = response.status == 200 and response.json().get("status") == "ok"
-        self.record("backend /health", "system", ok, f"HTTP {response.status}", response.latency_ms)
-
-        response = fetch(f"{self.ai_url}/health")
-        self.record("ai-service /health", "system", response.status == 200, f"HTTP {response.status}", response.latency_ms)
+        for name, spec in self.expectations.get("services", {}).items():
+            if not spec.get("health") or not self.base(name):
+                continue
+            url = f"{self.base(name)}{spec['health']}"
+            response = fetch(url)
+            ok = response.status == 200
+            for path, expected in (spec.get("expect_json") or {}).items():
+                ok = ok and dig(response.json(), path) == expected
+            self.record(f"{name} {spec['health']}", "system", ok, f"HTTP {response.status}", response.latency_ms, url)
 
     def check_deployed_commit(self) -> None:
         """Without this the gate can smoke-test a stale build and report it green."""
+        spec = next(
+            ((name, s) for name, s in self.expectations.get("services", {}).items() if s.get("commit_field")),
+            None,
+        )
         if not self.commit:
             self.skip("deployed commit matches", "system", "no --commit supplied")
             return
-        response = fetch(f"{self.backend_url}/health")
-        deployed = str(response.json().get("commit", "")) if response.status == 200 else ""
+        if not spec:
+            self.skip("deployed commit matches", "system", "no service declares a commit field")
+            return
+        name, service = spec
+        response = fetch(f"{self.base(name)}{service['health']}")
+        deployed = str(dig(response.json(), service["commit_field"]) or "") if response.status == 200 else ""
         if not deployed:
-            self.skip("deployed commit matches", "system", "/health does not report a commit")
+            self.skip("deployed commit matches", "system", "health response does not report a commit")
             return
         matches = deployed.startswith(self.commit[:7]) or self.commit.startswith(deployed[:7])
-        self.record("deployed commit matches", "system", matches, f"deployed={deployed or 'unknown'} expected={self.commit[:7]}")
+        self.record("deployed commit matches", "system", matches, f"deployed={deployed} expected={self.commit[:7]}")
 
-    def check_api_surface(self) -> list[str]:
-        """Probes every parameterless GET in the spec, so a new endpoint is covered for free."""
-        response = fetch(f"{self.backend_url}/api/openapi.json")
-        if not self.record("openapi spec served", "api", response.status == 200, f"HTTP {response.status}", response.latency_ms):
-            return []
+    def check_api_surface(self) -> None:
+        """Probe the declared endpoints, or derive them from an OpenAPI document if one exists."""
+        surface = self.expectations.get("api_surface") or {}
+        service = surface.get("service", "backend")
+        if not self.base(service):
+            return
 
+        for endpoint in surface.get("endpoints", []):
+            url = f"{self.base(service)}{endpoint['path']}"
+            response = fetch(url, method=endpoint.get("method", "GET"), headers=endpoint.get("headers"))
+            expected = endpoint.get("expect_status", 200)
+            ok = response.status == expected
+            for path, value in (endpoint.get("expect_json") or {}).items():
+                ok = ok and dig(response.json(), path) == value
+            name = endpoint.get("name") or f"{endpoint.get('method', 'GET')} {endpoint['path']}"
+            self.record(name, "api", ok, f"HTTP {response.status} (expected {expected})", response.latency_ms, url)
+
+        spec_path = surface.get("from_openapi")
+        if not spec_path:
+            return
+        url = f"{self.base(service)}{spec_path}"
+        response = fetch(url)
+        if not self.record("openapi spec served", "api", response.status == 200, f"HTTP {response.status}",
+                           response.latency_ms, url):
+            return
+        # Deriving GETs from the spec means a new endpoint is covered the day it ships.
+        skip = set(surface.get("skip_paths", [])) | {spec_path}
         paths = [
             path
-            for path, operations in response.json().get("paths", {}).items()
-            if "get" in operations and "{" not in path and path != "/api/openapi.json"
+            for path, operations in (response.json().get("paths") or {}).items()
+            if "get" in operations and "{" not in path and path not in skip
         ]
         for path in sorted(paths):
-            probe = fetch(f"{self.backend_url}{path}")
+            probe = fetch(f"{self.base(service)}{path}")
             self.record(f"GET {path}", "api", probe.status == 200, f"HTTP {probe.status}", probe.latency_ms, path)
-        return paths
 
-    def check_seed_baseline(self) -> None:
-        """Functional specs assert exact catalogue sizes; prove the data before blaming the UI."""
-        for resource, expected in DEFAULTS["seedBaseline"].items():
-            response = fetch(f"{self.backend_url}/api/{resource}")
-            actual = response.json().get("count") if response.status == 200 else None
+    def check_data_baselines(self) -> None:
+        """Functional specs assert exact seed sizes; prove the data before blaming the UI."""
+        for baseline in self.expectations.get("data_baselines", []):
+            service = baseline.get("service", "backend")
+            if not self.base(service):
+                continue
+            response = fetch(f"{self.base(service)}{baseline['path']}")
+            actual = dig(response.json(), baseline.get("field", "count")) if response.status == 200 else None
             self.record(
-                f"{resource} seed baseline",
+                baseline.get("name") or f"{baseline['path']} baseline",
                 "data",
-                actual == expected,
-                f"expected {expected}, found {actual}",
+                actual == baseline["expected"],
+                f"expected {baseline['expected']}, found {actual}",
                 response.latency_ms,
             )
 
     def check_configuration(self) -> None:
-        response = fetch(f"{self.backend_url}/api/llm-audit")
-        if not self.record("llm-audit reachable", "config", response.status == 200, f"HTTP {response.status}", response.latency_ms):
-            return
+        for spec in self.expectations.get("config_checks", []):
+            service = spec.get("service", "backend")
+            if not self.base(service):
+                continue
+            url = f"{self.base(service)}{spec['path']}"
+            response = fetch(url, headers=spec.get("headers"))
+            name = spec.get("name") or f"{spec['path']} reachable"
+            if not self.record(name, "config", response.status == 200, f"HTTP {response.status}",
+                               response.latency_ms, url):
+                continue
 
-        payload = response.json()
-        llm_config = payload.get("llmConfig", {})
-        if self.expect_provider:
-            actual = llm_config.get("provider")
-            self.record(
-                "llm provider as expected",
-                "config",
-                actual == self.expect_provider,
-                f"expected {self.expect_provider}, found {actual}",
-            )
-        if self.expect_api_key is not None:
-            actual = bool(llm_config.get("apiKeyConfigured"))
-            self.record(
-                "llm api key configured",
-                "config",
-                actual == self.expect_api_key,
-                f"expected {self.expect_api_key}, found {actual}",
-            )
+            payload = response.json()
+            for expectation in spec.get("expect", []):
+                # Values come from --expect key=value, so the same config serves every environment.
+                key = expectation["from_flag"]
+                if key not in self.expected:
+                    self.skip(expectation["name"], "config", f"no --expect {key}=... supplied")
+                    continue
+                wanted = self.expected[key]
+                actual = dig(payload, expectation["field"])
+                if expectation.get("as_bool"):
+                    matches = bool(actual) == (wanted.lower() == "true")
+                else:
+                    matches = str(actual) == wanted
+                self.record(expectation["name"], "config", matches, f"expected {wanted}, found {actual}")
 
-        body = response.body.decode("utf-8", "replace")
-        # `apiKeyConfigured: false` is the intended, non-secret disclosure — match a field
-        # that carries a value, not any field whose name contains "key".
-        leaked = re.findall(r'"(\w*(?:api_?key|secret|token))"\s*:\s*"', body, re.IGNORECASE)
-        if "LLM_API_KEY" in body:
-            leaked.append("LLM_API_KEY")
-        self.record("no secret in governance payload", "security", not leaked, f"leaked fields: {leaked}" if leaked else "clean")
+            if spec.get("secret_scan"):
+                body = response.body.decode("utf-8", "replace")
+                # `apiKeyConfigured: false` is intended disclosure — match fields carrying a
+                # value, not every field whose name contains "key".
+                leaked = SECRET_FIELD.findall(body)
+                leaked += [marker for marker in spec.get("secret_markers", []) if marker in body]
+                self.record(
+                    "no secret in payload",
+                    "security",
+                    not leaked,
+                    f"leaked fields: {leaked}" if leaked else "clean",
+                )
 
     def check_frontend(self) -> None:
-        response = fetch(self.frontend_url)
-        served = self.record(
-            "frontend index",
-            "frontend",
-            response.status == 200,
-            f"HTTP {response.status}",
-            response.latency_ms,
-            self.frontend_url,
-        )
-        if not served:
+        spec = self.expectations.get("frontend") or {}
+        base = self.base("frontend")
+        if not base or spec.get("enabled") is False:
+            return
+        response = fetch(base)
+        if not self.record("frontend index", "frontend", response.status == 200, f"HTTP {response.status}",
+                           response.latency_ms, base):
             return
 
+        if not spec.get("probe_assets", True):
+            return
         parser = AssetParser()
         parser.feed(response.body.decode("utf-8", "replace"))
         # A SPA returns 200 for any route, so index.html alone proves nothing; broken or
         # mismatched asset hashes after a deploy are the failure this actually catches.
-        for asset in parser.assets[: DEFAULTS["maxAssetsProbed"]]:
-            url = urljoin(self.frontend_url, asset)
+        for asset in parser.assets[: spec.get("max_assets", 20)]:
+            url = urljoin(base + "/", asset)
             probe = fetch(url)
-            self.record(f"asset {asset}", "frontend", probe.status == 200, f"HTTP {probe.status}", probe.latency_ms, url)
+            self.record(f"asset {asset}", "frontend", probe.status == 200, f"HTTP {probe.status}",
+                        probe.latency_ms, url)
         if not parser.assets:
             self.skip("frontend assets", "frontend", "index.html references no scripts or stylesheets")
 
     def check_cors(self) -> None:
-        """A CORS_ORIGIN pointing at the wrong host breaks every browser test downstream."""
-        origin = f"{urlparse(self.frontend_url).scheme}://{urlparse(self.frontend_url).netloc}"
+        """A CORS origin pointing at the wrong host breaks every browser test downstream."""
+        spec = self.expectations.get("cors")
+        base = self.base("frontend")
+        if not spec or not base:
+            return
+        service = spec.get("service", "backend")
+        origin = f"{urlparse(base).scheme}://{urlparse(base).netloc}"
         response = fetch(
-            f"{self.backend_url}/api/destinations",
+            f"{self.base(service)}{spec['path']}",
             method="OPTIONS",
             headers={"Origin": origin, "Access-Control-Request-Method": "GET"},
         )
@@ -274,7 +355,7 @@ class Heartbeat:
         self.check_health()
         self.check_deployed_commit()
         self.check_api_surface()
-        self.check_seed_baseline()
+        self.check_data_baselines()
         self.check_configuration()
         self.check_frontend()
         self.check_cors()
@@ -295,10 +376,11 @@ def to_markdown(report: dict[str, Any]) -> str:
         f"| Run id | `{report['runId']}` |",
         f"| Verdict | **{report['verdict'].upper()}** |",
         f"| Environment | {report['environment'] or 'unspecified'} |",
-        f"| Backend | {report['urls']['backend']} |",
-        f"| Frontend | {report['urls']['frontend']} |",
-        f"| AI service | {report['urls']['ai']} |",
-        f"| Checks | {counts['pass']} passed · {counts['fail']} failed · {counts['warn']} slow · {counts['skip']} skipped |",
+    ]
+    lines += [f"| {service} | {url} |" for service, url in report["urls"].items()]
+    lines += [
+        f"| Checks | {counts['pass']} passed · {counts['fail']} failed · {counts['warn']} slow · "
+        f"{counts['skip']} skipped |",
         f"| Duration | {report['durationMs']} ms |",
         f"| Timestamp | {report['createdAt']} |",
         "",
@@ -349,52 +431,75 @@ def to_junit(report: dict[str, Any]) -> bytes:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--backend-url", default=os.environ.get("VOYAGENIE_API_URL"))
-    parser.add_argument("--frontend-url", default=os.environ.get("VOYAGENIE_BASE_URL"))
-    parser.add_argument("--ai-url", default=os.environ.get("VOYAGENIE_AI_URL"))
+    parser.add_argument("--backend-url")
+    parser.add_argument("--frontend-url")
+    parser.add_argument("--ai-url", help="Only needed when the expectations declare an ai-service")
+    parser.add_argument("--expectations", type=Path, default=DEFAULT_EXPECTATIONS)
     parser.add_argument("--run-id", default="local")
-    parser.add_argument("--appname", default="voyagenie")
-    parser.add_argument("--environment", default=os.environ.get("VOYAGENIE_ENV"))
-    parser.add_argument("--commit", help="Expected deployed commit; compared against /health")
-    parser.add_argument("--expect-provider", help="Fail if the deployed LLM provider differs, e.g. mock or openai")
-    parser.add_argument("--expect-api-key", choices=["true", "false"], help="Fail if apiKeyConfigured differs")
-    parser.add_argument("--ready-timeout", type=int, default=90, help="Seconds to wait for /health after a deploy")
-    parser.add_argument("--budget-ms", type=int, default=DEFAULTS["latencyBudgetMs"])
+    parser.add_argument("--appname", default=os.environ.get("CRAAS_APPNAME"))
+    parser.add_argument("--environment")
+    parser.add_argument("--commit", help="Expected deployed commit; compared against the health payload")
+    parser.add_argument(
+        "--expect",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Value for a config expectation declared in the expectations file, e.g. provider=mock",
+    )
+    parser.add_argument("--ready-timeout", type=int, default=90, help="Seconds to wait for health after a deploy")
+    parser.add_argument("--budget-ms", type=int)
     parser.add_argument("--strict", action="store_true", help="Treat slow responses as failures")
     parser.add_argument("--out-dir", default="reports/heartbeat")
     args = parser.parse_args(argv)
 
-    missing = [name for name in ("backend_url", "frontend_url", "ai_url") if not getattr(args, name)]
+    if not args.expectations.is_file():
+        parser.error(f"expectations file not found: {args.expectations}")
+    args.expectations_data = json.loads(args.expectations.read_text())
+
+    declared = args.expectations_data.get("services", {})
+    urls = {"backend": args.backend_url, "frontend": args.frontend_url, "ai-service": args.ai_url}
+    missing = [name for name in declared if not urls.get(name)]
+    if args.expectations_data.get("frontend", {}).get("enabled", True) and not args.frontend_url:
+        missing.append("frontend")
     if missing:
-        parser.error(f"missing target URLs: {', '.join(missing)} (pass --* or set VOYAGENIE_*_URL)")
+        parser.error(f"missing target URLs for: {', '.join(sorted(set(missing)))}")
     return args
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     started = time.perf_counter()
+    expectations = args.expectations_data
+
+    urls = {
+        name: url.rstrip("/")
+        for name, url in (("backend", args.backend_url), ("frontend", args.frontend_url), ("ai-service", args.ai_url))
+        if url
+    }
+    expected: dict[str, str] = {}
+    for pair in args.expect:
+        key, _, value = pair.partition("=")
+        expected[key] = value
 
     heartbeat = Heartbeat(
-        backend_url=args.backend_url.rstrip("/"),
-        frontend_url=args.frontend_url.rstrip("/"),
-        ai_url=args.ai_url.rstrip("/"),
+        expectations=expectations,
+        urls=urls,
         commit=args.commit,
-        expect_provider=args.expect_provider,
-        expect_api_key=None if args.expect_api_key is None else args.expect_api_key == "true",
-        budget_ms=args.budget_ms,
+        expected=expected,
+        budget_ms=args.budget_ms or expectations.get("latency_budget_ms", 2000),
     )
     heartbeat.run(args.ready_timeout)
 
     counts = summarise(heartbeat.checks)
     unhealthy = counts["fail"] > 0 or (args.strict and counts["warn"] > 0)
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "runId": args.run_id,
-        "appname": args.appname,
+        "appname": args.appname or expectations.get("app", "unknown"),
         "environment": args.environment,
         "commit": args.commit,
         "verdict": "unhealthy" if unhealthy else "healthy",
-        "urls": {"backend": heartbeat.backend_url, "frontend": heartbeat.frontend_url, "ai": heartbeat.ai_url},
+        "urls": urls,
         "summary": counts,
         "durationMs": int((time.perf_counter() - started) * 1000),
         "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

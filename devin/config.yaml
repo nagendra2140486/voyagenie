@@ -32,7 +32,10 @@ heartbeat:
     python3 devin/tools/heartbeat.py
     --backend-url {backend_url} --frontend-url {frontend_url} --ai-url {ai_url}
     --run-id {run_id} --appname voyagenie --commit {commit}
+    --expect provider=mock --expect api_key=false
     --out-dir {report_dir}
+  # Every check lives in devin/tools/heartbeat-expectations.json, not in the script.
+  expectations: devin/tools/heartbeat-expectations.json
   # 0 healthy · 1 a check failed · 2 never became ready
   exit_codes: {healthy: 0, failed: 1, not_ready: 2}
   report: "{report_dir}/heartbeat.md"

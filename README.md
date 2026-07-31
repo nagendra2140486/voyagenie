@@ -236,8 +236,12 @@ wrong" rather than "the deploy is broken". Standard library only, read-only, und
 ```bash
 python3 devin/tools/heartbeat.py \
   --backend-url http://localhost:4000 --frontend-url http://localhost:5173 --ai-url http://localhost:8000 \
-  --run-id local --expect-provider mock --expect-api-key false --out-dir reports/local
+  --run-id local --expect provider=mock --expect api_key=false --out-dir reports/local
 ```
+
+The checks themselves live in `devin/tools/heartbeat-expectations.json`, not in the script, so the
+same script serves any repository: the file declares the services, the API surface, the seed
+baselines and the config assertions below.
 
 | Phase | Checks |
 | --- | --- |

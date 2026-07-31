@@ -17,8 +17,11 @@ devin/
 
 1. Copy `devin/tools/` across.
 2. Copy `devin/config.yaml` and edit every path, command and report type to match that repo.
-3. Edit `tools/heartbeat-expectations.json` — its contents are this application's data, so a
-   copied file will assert the wrong things while still exiting 0.
+3. Rewrite `tools/heartbeat-expectations.json` — **every heartbeat check is declared there**, not
+   in `heartbeat.py`, so this file is the whole port: services and their health paths, the API
+   surface (an OpenAPI document to enumerate, or an explicit endpoint list with expected statuses),
+   seed baselines, config assertions and the CORS probe. A copied file asserts the wrong things
+   while still exiting 0.
 4. Declare a capability as `null` in the config when the repo does not have it. A stage then
    reports itself unavailable with a reason instead of improvising a command that does not exist.
 
@@ -37,7 +40,8 @@ Each script is stdlib-only and takes its inputs as flags, so a stage can run it 
 anything about the repository:
 
 ```bash
-python3 devin/tools/heartbeat.py --backend-url ... --frontend-url ... --out-dir reports/run
+python3 devin/tools/heartbeat.py --backend-url ... --frontend-url ... --out-dir reports/run \
+  --expect provider=mock          # values for expectations the file declares as from_flag
 python3 devin/tools/tickets.py --repo . --base origin/main --head HEAD --out tickets.json
 python3 devin/tools/publish_report.py --file report.md --reporttype verdict-report \
   --pr-id 18 --appname voyagenie --repository https://github.com/.../voyagenie/
