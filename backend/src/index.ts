@@ -22,9 +22,18 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Reflecting any origin is a development convenience. In production it turns every browser on
+// the internet into an authorised caller, so the configured allow-list wins instead.
+const corsOrigin =
+  config.corsOrigin !== '*'
+    ? config.corsOrigin.split(',')
+    : config.isProduction
+      ? [config.publicOrigin]
+      : true;
+
 app.use(
   cors({
-    origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(','),
+    origin: corsOrigin,
     exposedHeaders: ['x-session-id', 'x-ratelimit-limit', 'x-ratelimit-remaining'],
   }),
 );

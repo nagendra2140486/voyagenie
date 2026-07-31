@@ -19,6 +19,10 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL ?? 'postgresql://voyagenie:voyagenie@localhost:5432/voyagenie',
   aiServiceUrl: (process.env.AI_SERVICE_URL ?? 'http://localhost:8000').replace(/\/$/, ''),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  contactInquiriesPerHour: num('CONTACT_INQUIRIES_PER_HOUR', 5),
+  isProduction: process.env.NODE_ENV === 'production',
+  // Where the app is actually served from; the fallback origin when CORS_ORIGIN is a wildcard.
+  publicOrigin: process.env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
   llm: {
     provider: process.env.LLM_PROVIDER ?? 'mock',
     model: process.env.LLM_MODEL ?? 'mock-travel-1',
