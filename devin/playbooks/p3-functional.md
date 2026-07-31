@@ -10,7 +10,7 @@ environment, and reports both the selection reasoning and the result. Publishes 
 documents to the CRaaS PR QE Impact API — impact analysis and the functional result — and
 returns both to the orchestrator.
 
-Repository-independent: the repo's `.prqe/config.yaml` declares the test runner, the selection
+Repository-independent: the repo's `devin/config.yaml` declares the test runner, the selection
 inputs and the rails.
 
 ## What's Needed From User
@@ -20,7 +20,7 @@ inputs and the rails.
 - Optional: `commit`, `environment`, `run_id`
 
 ## Procedure
-1. Clone the repository and read `.prqe/config.yaml`. If `functional.runner` is null, report the
+1. Clone the repository and read `devin/config.yaml`. If `functional.runner` is null, report the
    stage as unavailable, say what the repo would need, and stop.
 2. Collect the change set: commit list, changed files and the full diff against the merge base.
 3. Load the selection inputs the config names — `impact.spec_inventory` (the closed vocabulary of

@@ -9,7 +9,7 @@ Reads a pull request's commits and full diff, judges risk, names likely defects,
 which suites the orchestrator should run. Publishes its markdown to the CRaaS PR QE Impact API
 and returns it to the orchestrator. Analysis only — it runs no tests and touches no environment.
 
-Repository-independent: read the repo's `.prqe/config.yaml` for report types, force-full paths
+Repository-independent: read the repo's `devin/config.yaml` for report types, force-full paths
 and low-signal paths rather than assuming any layout.
 
 ## What's Needed From User
@@ -18,7 +18,7 @@ and low-signal paths rather than assuming any layout.
 - Optional: `commit` (the deployed SHA), `environment`
 
 ## Procedure
-1. Clone the repository and read `.prqe/config.yaml`.
+1. Clone the repository and read `devin/config.yaml`.
 2. Establish the change set against the merge base, not the branch tip:
    `git diff --merge-base origin/<base> origin/<head>`. Also collect the commit list
    (`--no-merges`, with per-commit stats) and how far the branch is behind base.

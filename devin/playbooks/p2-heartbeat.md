@@ -10,7 +10,7 @@ runs, so later failures can be attributed to code rather than to the deploy. Pub
 markdown to the CRaaS PR QE Impact API and returns its verdict to the orchestrator. Read-only:
 it must not create, modify or delete application data.
 
-Repository-independent: the repo's `.prqe/config.yaml` says whether a heartbeat script exists
+Repository-independent: the repo's `devin/config.yaml` says whether a heartbeat script exists
 and, if not, which checks to perform.
 
 ## What's Needed From User
@@ -21,7 +21,7 @@ and, if not, which checks to perform.
 Refuse to run without the URLs — there is nothing to check.
 
 ## Procedure
-1. Clone the repository and read `.prqe/config.yaml`.
+1. Clone the repository and read `devin/config.yaml`.
 2. If `heartbeat.script` is set, run `heartbeat.command` with the run's URLs substituted, and
    interpret the exit code using `heartbeat.exit_codes`.
 3. If `heartbeat.script` is null, perform `heartbeat.checks` yourself with plain HTTP requests,

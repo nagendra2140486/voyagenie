@@ -13,7 +13,7 @@ the CRaaS PR QE Impact API and returns it to this session; this playbook decides
 it does not write reports itself.
 
 Repository-independent: everything repo-specific is declared in that repository's
-`.prqe/config.yaml`.
+`devin/config.yaml`.
 
 ## What's Needed From User
 - `pr_id` — pull request number, e.g. `12`
@@ -41,9 +41,9 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
 `coverage_gaps`) rather than parsing the child's prose.
 
 ## Procedure
-1. Clone the repository and read `.prqe/config.yaml`. If it is missing, stop and tell the user
+1. Clone the repository and read `devin/config.yaml`. If it is missing, stop and tell the user
    which capabilities cannot be resolved without it rather than guessing the repo's layout.
-2. Build the ticket map with `python3 ops/prqe/tickets.py --repo . --base <base> --head <head>
+2. Build the ticket map with `python3 devin/tools/tickets.py --repo . --base <base> --head <head>
    --out tickets.json`, or equivalently by reading `git log --no-merges` over the merge-base
    range yourself. It matches `\bVIT\d{5,}\b` in each commit's **title and body** and produces
    `ticket -> commits -> changed files`. Commits carrying no id are collected under `_untracked`.

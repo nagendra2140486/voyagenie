@@ -9,7 +9,7 @@ Runs the repository's critical-journey performance script against the deployed e
 the functional stage has finished, and reports latency and error rate. Publishes its markdown to
 the CRaaS PR QE Impact API and returns the verdict to the orchestrator.
 
-Repository-independent: the repo's `.prqe/config.yaml` declares the runner and command.
+Repository-independent: the repo's `devin/config.yaml` declares the runner and command.
 
 ## What's Needed From User
 - `pr_id`, `repository`, `appname`
@@ -18,7 +18,7 @@ Repository-independent: the repo's `.prqe/config.yaml` declares the runner and c
 - Optional: `commit`, `environment`, `run_id`, duration and VU overrides
 
 ## Procedure
-1. Clone the repository and read `.prqe/config.yaml`. If `performance.runner` is null, report the
+1. Clone the repository and read `devin/config.yaml`. If `performance.runner` is null, report the
    stage as unavailable, name what the repo would need to add, and stop — do not improvise a load
    script for an app whose critical journeys have not been agreed.
 2. Confirm the functional stage has finished. Load against a shared environment invalidates

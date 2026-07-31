@@ -11,7 +11,7 @@ to the CRaaS PR QE Impact API — the verdict report when everything is green, t
 when anything failed — and returns the verdict to the orchestrator. The document ends with a
 machine-readable verdict block that CRaaS parses.
 
-Repository-independent: the repo's `.prqe/config.yaml` supplies the report types.
+Repository-independent: the repo's `devin/config.yaml` supplies the report types.
 
 ## What's Needed From User
 - `pr_id`, `repository`, `appname`
@@ -23,7 +23,7 @@ Repository-independent: the repo's `.prqe/config.yaml` supplies the report types
 - Optional: `commit`, `environment`, `run_id`
 
 ## Procedure
-1. Read `.prqe/config.yaml` for the `verdict` and `failure` report types.
+1. Read `devin/config.yaml` for the `verdict` and `failure` report types.
 2. Build the stage table: every stage, its status (`passed` / `failed` / `skipped` / `error`),
    its key numbers and its CRaaS document id. A skipped stage must carry the reason it was
    skipped — an unexplained gap reads as a silent pass.
