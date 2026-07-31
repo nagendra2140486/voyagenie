@@ -69,6 +69,9 @@ impact:
     - "**/tsconfig*.json"
     - .gitignore
     - eslint.config.js
+    # PRQE's own tooling. It cannot affect the application under test, and without this the
+    # unmapped-path rail forces a 35-test suite that structurally cannot observe the change.
+    - devin/**
   # Languages the coverage map cannot resolve; changes here get a representative test plus an
   # explicit coverage-gap entry rather than a false mapping.
   unmapped_paths:

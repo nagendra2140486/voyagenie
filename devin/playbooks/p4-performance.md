@@ -34,7 +34,10 @@ Repository-independent: the repo's `devin/config.yaml` declares the runner and c
    criterion to judge against.
 7. Write the markdown report: environment, run parameters, per-journey latency table, threshold
    results, failures, and how to read the numbers given the environment's size.
-8. Publish it with the config's `performance` report type and confirm the POST succeeded.
+8. Publish it with the config's `performance` report type, passing the measurements as JSON with
+   `--json-file` (verdict, p95, p99, iterations, failures, error rate, load profile). The API
+   requires `analysis_json`, and latency numbers are the clearest case for a queryable field
+   rather than prose. Confirm the POST succeeded.
 9. Return the structured output plus the markdown to the orchestrator.
 
 ## Specifications
@@ -42,7 +45,9 @@ Repository-independent: the repo's `devin/config.yaml` declares the runner and c
   `iterations`, `failures`, `error_rate`, `report_id`, `performance_markdown`.
 - The report states the load profile used (virtual users and duration) — a latency number without
   it is meaningless.
-- Deliverable: one published performance document and the markdown returned in-session.
+- Deliverable: one published performance document carrying both the markdown and the JSON, and
+  the markdown returned in-session.
+- `analysis_json` mirrors the structured output; the two must not disagree.
 - Validation: the runner exited and produced a summary file; a missing summary is a stage error,
   not a pass.
 

@@ -40,8 +40,11 @@ Refuse to run without the URLs — there is nothing to check.
    means retry the deploy, not that the code regressed.
 6. Write the markdown report: verdict, counts, a table of checks with latency, then a short
    section on what the result means for the later stages.
-7. Publish it with the config's `heartbeat` report type. Note in the report when that type
-   shares a document id with another stage, because the later write wins.
+7. Publish it with the config's `heartbeat` report type, passing `--json-file` with the
+   structured result — `heartbeat.json` from the script already has it, otherwise write the same
+   fields yourself. The API requires `analysis_json`; sending `{}` throws away every check result
+   CRaaS could otherwise query. Note in the report when the report type shares a document id with
+   another stage, because the later write wins.
 8. Return the structured output plus the markdown to the orchestrator.
 
 ## Specifications
@@ -49,7 +52,9 @@ Refuse to run without the URLs — there is nothing to check.
   `skipped`, `failed_checks`, `report_id`, `heartbeat_markdown`.
 - Every check records latency, so a slow-but-correct environment is visible before the suites
   blame the tests.
-- Deliverable: one published heartbeat document and the markdown returned in-session.
+- Deliverable: one published heartbeat document carrying both the markdown and the JSON, and the
+  markdown returned in-session.
+- `analysis_json` mirrors the structured output; the two must not disagree.
 - Validation: the number of checks reported matches the number executed.
 
 ## Advice and Pointers

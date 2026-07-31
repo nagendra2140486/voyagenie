@@ -42,8 +42,12 @@ and low-signal paths rather than assuming any layout.
    the ids from the orchestrator's ticket map when supplied; otherwise match `\bVIT\d{5,}\b` in
    each commit's title and body. A commit with no id is reported as untracked rather than being
    attached to the nearest ticket — the final analysis relies on that distinction.
-9. Publish it using the config's publisher with the `pr_analysis` report type. Confirm the POST
-   succeeded — a failed publish means the report is lost.
+9. Write the same result as JSON to `{report_dir}/pr-analysis.json` — the structured output's
+   fields, plus `tickets` — and publish both with the config's publisher and the `pr_analysis`
+   report type, passing `--json-file {report_dir}/pr-analysis.json`. The API requires
+   `analysis_json`, and sending the real object rather than `{}` is what lets CRaaS query the
+   recommendation without parsing markdown. Confirm the POST succeeded — a failed publish means
+   the report is lost.
 10. Return the structured output plus the markdown to the orchestrator.
 
 ## Specifications
@@ -52,7 +56,9 @@ and low-signal paths rather than assuming any layout.
 - Every ticket id found in the commits appears in the report, and every commit is either mapped
   to a ticket or explicitly untracked.
 - The recommendation must be justified by named files, never by line count alone.
-- Deliverable: one published `pr_analysis` document and the markdown returned in-session.
+- Deliverable: one published `pr_analysis` document carrying both the markdown and the JSON, and
+  the markdown returned in-session.
+- `analysis_json` mirrors the structured output; the two must not disagree.
 - Validation: the publish response returned success and a document id.
 
 ## Advice and Pointers
