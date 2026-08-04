@@ -10,7 +10,7 @@ Prerequisites:
     export DEVIN_API_KEY=cog_...   # service user key, not a PAT
 
 Usage:
-    python scripts/trigger_prqe_chain_voyagenie.py 2
+    python scripts/trigger_prqe_chain_voyagenie.py 2 [<deployed sha>]
 """
 
 import os
@@ -29,17 +29,20 @@ PLAYBOOK_ID = "playbook-7126647262cf4d74bf7e00f1d7498c3b"
 # ============ STATIC CONFIG ============
 GITHUB_ORG = "Cognizant-FrontierAICyberDefense"
 REPO_NAME = "voyagenie"
-APP_NAME = "voyagenie-app"
+APP_NAME = "voyagenie"  # must match devin/config.yaml, not the Azure webapp name
 ENVIRONMENT = "uat"
-COMMIT = "<sha deployed>"
 BACKEND_URL = "https://voyagenie-app.azurewebsites.net"
 FRONTEND_URL = "https://voyagenie-app.azurewebsites.net"
+AI_URL = "https://voyagenie-app.azurewebsites.net"  # ai_service declared in devin/config.yaml
 
 TIMEOUT_MINUTES = 60
 POLL_INTERVAL = 30
 
 # ============ DYNAMIC INPUT ============
 PULL_REQUEST_ID = sys.argv[1] if len(sys.argv) > 1 else input("Enter PR ID: ").strip()
+
+# Deployed commit sha: 2nd argument, else $GITHUB_SHA, else the PR head from GitHub.
+COMMIT = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("GITHUB_SHA", "")
 
 # ============ HTTP SESSION WITH RETRY ============
 http = requests.Session()
@@ -60,7 +63,7 @@ http.headers.update(
 )
 
 
-def build_prompt(pr_id: str) -> str:
+def build_prompt(pr_id: str, commit: str) -> str:
     """Build the PRQE chain prompt for the deployed pull request."""
     return (
         "Run the PRQE chain for this deployed pull request.\n\n"
@@ -68,10 +71,25 @@ def build_prompt(pr_id: str) -> str:
         f"repository: https://github.com/{GITHUB_ORG}/{REPO_NAME}\n"
         f"appname: {APP_NAME}\n"
         f"environment: {ENVIRONMENT}\n"
-        f"commit: {COMMIT}\n"
+        f"commit: {commit}\n"
         f"backend_url: {BACKEND_URL}\n"
-        f"frontend_url: {FRONTEND_URL}"
+        f"frontend_url: {FRONTEND_URL}\n"
+        f"ai_url: {AI_URL}"
     )
+
+
+def resolve_commit(pr_id: str) -> str:
+    """Return the deployed commit sha, falling back to the PR head sha from GitHub."""
+    if COMMIT:
+        return COMMIT
+
+    response = requests.get(
+        f"https://api.github.com/repos/{GITHUB_ORG}/{REPO_NAME}/pulls/{pr_id}",
+        headers={"Accept": "application/vnd.github+json"},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()["head"]["sha"]
 
 
 # ============ DEVIN: Create Session ============
@@ -131,7 +149,8 @@ if __name__ == "__main__":
     if not DEVIN_API_KEY:
         sys.exit("DEVIN_API_KEY is not set.")
 
-    prompt = build_prompt(PULL_REQUEST_ID)
+    commit = resolve_commit(PULL_REQUEST_ID)
+    prompt = build_prompt(PULL_REQUEST_ID, commit)
     print(f"Triggering PRQE chain for {APP_NAME} PR #{PULL_REQUEST_ID}\n")
     print(prompt + "\n")
 
