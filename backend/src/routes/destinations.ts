@@ -4,6 +4,7 @@ import { query } from '../db.js';
 
 export const destinationsRouter = Router();
 
+
 export const destinationFiltersSchema = z.object({
   q: z.string().trim().max(120).optional(),
   country: z.string().trim().max(120).optional(),
