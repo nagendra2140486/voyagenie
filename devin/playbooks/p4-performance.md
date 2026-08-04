@@ -38,7 +38,21 @@ Repository-independent: the repo's `devin/config.yaml` declares the runner and c
    `--json-file` (verdict, p95, p99, iterations, failures, error rate, load profile). The API
    requires `analysis_json`, and latency numbers are the clearest case for a queryable field
    rather than prose. Confirm the POST succeeded.
-9. Return the structured output plus the markdown to the orchestrator.
+9. Record the stage in the agent log as the **last action, whatever the outcome**, using
+   `agent_log.command` from the config:
+
+   ```
+   python3 devin/tools/agent_log.py --appname <appname> --pr-id <pr_id> --run-id <run_id> \
+     --stage performance --status passed --started-at <epoch taken before step 1> \
+     --commit <commit> --environment <environment> --report-ids <published document id> \
+     --counts '{"requests": 532, "failed_requests": 0}' \
+     --extra '{"p95_ms": 10.88, "p99_ms": 18.4}'
+   ```
+
+   A repo with `performance.runner: null` still logs a row — `--status skipped --notes "no
+   performance script in this repo"`. A stage that silently writes nothing is indistinguishable
+   from one that was never dispatched.
+10. Return the structured output plus the markdown to the orchestrator.
 
 ## Specifications
 - Structured output: `verdict` (`pass` / `fail` / `unavailable`), `p95_ms`, `p99_ms`,
@@ -48,6 +62,7 @@ Repository-independent: the repo's `devin/config.yaml` declares the runner and c
 - Deliverable: one published performance document carrying both the markdown and the JSON, and
   the markdown returned in-session.
 - `analysis_json` mirrors the structured output; the two must not disagree.
+- One agent-log row under the orchestrator's `run_id`, including when the stage was skipped.
 - Validation: the runner exited and produced a summary file; a missing summary is a stage error,
   not a pass.
 

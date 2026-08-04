@@ -14,6 +14,7 @@ and low-signal paths rather than assuming any layout.
 
 ## What's Needed From User
 - `pr_id`, `repository`, `appname`
+- `run_id` — the orchestrator's id for this chain; every stage logs under it
 - Optional: the orchestrator's ticket map (`ticket -> commits -> changed files`)
 - Optional: `commit` (the deployed SHA), `environment`
 
@@ -50,7 +51,22 @@ and low-signal paths rather than assuming any layout.
    `analysis_json`, and sending the real object rather than `{}` is what lets CRaaS query the
    recommendation without parsing markdown. Confirm the POST succeeded — a failed publish means
    the report is lost.
-10. Return the structured output plus the markdown to the orchestrator.
+10. Record the stage in the agent log as the **last action, whatever the outcome**, using
+    `agent_log.command` from the config:
+
+    ```
+    python3 devin/tools/agent_log.py --appname <appname> --pr-id <pr_id> --run-id <run_id> \
+      --stage pr-analysis --status passed --started-at <epoch taken before step 1> \
+      --commit <commit> --environment <environment> --report-ids <published document id> \
+      --counts '{"commits": 2, "files_changed": 6, "tickets": 2, "findings": 3}' \
+      --extra '{"risk": "medium"}'
+    ```
+
+    Take the timestamp before step 1, so the duration covers the stage rather than its last
+    command. Log `--status failed` or `error` when that is what happened: the stage that died is
+    the one whose row matters. The tool exits 0 even when the write fails, so this never turns a
+    completed stage into a failed one — but say in the return whether the row was written.
+11. Return the structured output plus the markdown to the orchestrator.
 
 ## Specifications
 - Structured output: `risk`, `recommend.heartbeat`, `recommend.functional`,
@@ -58,8 +74,10 @@ and low-signal paths rather than assuming any layout.
 - Every ticket id found in the commits appears in the report, and every commit is either mapped
   to a ticket or explicitly untracked.
 - The recommendation must be justified by named files, never by line count alone.
-- Deliverable: one published `pr_analysis` document carrying both the markdown and the JSON, and
-  the markdown returned in-session.
+- Deliverable: one published `pr_analysis` document carrying both the markdown and the JSON, one
+  agent-log row, and the markdown returned in-session.
+- The agent-log row carries this stage's own `run_id` — the orchestrator's, never a new one, or
+  the run cannot be totalled.
 - `analysis_json` mirrors the structured output; the two must not disagree.
 - Validation: the publish response returned success and a document id.
 
@@ -78,3 +96,5 @@ and low-signal paths rather than assuming any layout.
 - Do not recommend the full suite by default to be safe — that defeats selection; use the
   config's force-full and low-signal lists to decide.
 - Do not report a publish as successful without the API's success response.
+- Do not skip the agent-log row because the stage failed, and do not fail the stage because the
+  row could not be written.
