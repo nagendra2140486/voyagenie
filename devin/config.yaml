@@ -6,7 +6,7 @@
 # playbook fork.
 #
 # Placeholders substituted at run time: {backend_url} {frontend_url} {ai_url} {pr_id} {run_id}
-# {commit} {report_dir} {selection}
+# {commit} {report_dir} {selection} {stage} {status} {started_at}
 
 schemaVersion: 1
 
@@ -45,6 +45,20 @@ publisher:
     python3 devin/tools/publish_report.py --file {file} --reporttype {reporttype}
     --pr-id {pr_id} --appname voyagenie
     --repository https://github.com/Cognizant-FrontierAICyberDefense/voyagenie/
+
+agent_log:
+  # One row per stage: what it did, how long it took, what it cost. Separate from the reports
+  # above because report ids overwrite per PR, so cost history would erase itself on a re-run;
+  # these are keyed {appname}_{pr_id}_{stage}_{run_id} and accumulate. The same container also
+  # holds CRaaS's own per-PR text logs (`PR163`, with a free-text `agentLog`); rows written here
+  # carry `doctype: agent_log` so the two are distinguishable.
+  script: devin/tools/agent_log.py
+  command: >-
+    python3 devin/tools/agent_log.py --appname voyagenie --pr-id {pr_id} --run-id {run_id}
+    --stage {stage} --status {status} --started-at {started_at}
+  endpoint: https://agent-log-a5d6dxe7hbd2bxa2.canadacentral-01.azurewebsites.net/agent-log
+  # Telemetry never fails the stage that produced it: a failed write exits 0 and prints to stderr.
+  blocking: false
 
 impact:
   # Closed vocabulary: selections are validated against this file.
@@ -119,5 +133,8 @@ reports:
     functional: regression-report
     performance: perf-report
     heartbeat: heartbeat-report
+    # One type for every colour. Splitting red out under `failure-analysis` meant a PR whose
+    # verdict changed between runs left a stale document behind under the other id, and every
+    # consumer had to query both types to list a run. The colour is already in the `verdict`
+    # field. `failure-analysis` stays a valid type in the API so earlier documents resolve.
     verdict: verdict-report
-    failure: failure-analysis

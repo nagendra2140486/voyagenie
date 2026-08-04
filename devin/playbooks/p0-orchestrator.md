@@ -50,36 +50,61 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
    Do not parse the `fix(...)` scope: CRaaS writes `fix(VIT0015739): ...` in some repos and
    `fix(security): VIT0016042 - ...` in others, and scope-parsing yields `security` for the
    second form.
-3. Record the run context in a scratch file `run-context.md`: pr_id, repository, appname,
-   environment, commit, the service URLs, the config path, and the ticket map. Every sub-agent
-   prompt must carry all of it, because child sessions run on their own machines and share
-   nothing with this one.
-4. Start the **PR Analysis** sub-agent as a child session with the run context. Wait for it to
+3. Mint the `run_id` for this chain — `date -u +%Y%m%dT%H%M%S` — and note this session's start
+   time. Every stage logs under that one id; a stage that invents its own cannot be totalled
+   with the rest, and a re-run of the same PR must be a distinct id or its cost history
+   overwrites itself.
+4. Record the run context in a scratch file `run-context.md`: pr_id, repository, appname,
+   environment, commit, the service URLs, the config path, the `run_id` and the ticket map. Every
+   sub-agent prompt must carry all of it, because child sessions run on their own machines and
+   share nothing with this one.
+5. Start the **PR Analysis** sub-agent as a child session with the run context. Wait for it to
    finish and capture its structured output and markdown.
-5. Read the recommendation. Heartbeat always runs. Functional and performance run only if
+6. Read the recommendation. Heartbeat always runs. Functional and performance run only if
    recommended **and** the config declares them available (`functional.runner` /
    `performance.runner` non-null). Record an unavailable stage as `skipped` with that reason.
    State the resulting plan in one line before proceeding.
-6. Run the **Heartbeat** sub-agent. Capture its verdict (`healthy` / `unhealthy`) and markdown.
+7. Run the **Heartbeat** sub-agent. Capture its verdict (`healthy` / `unhealthy`) and markdown.
    Do not abort on `unhealthy` — continue with the recommended suites, but carry the verdict
    forward so downstream failures can be attributed to the environment.
-7. If functional is in the plan, run the **Functional** sub-agent, including the heartbeat
+8. If functional is in the plan, run the **Functional** sub-agent, including the heartbeat
    verdict in its prompt. Capture its markdown and pass/fail counts.
-8. If performance is in the plan, run the **Performance** sub-agent after functional has
+9. If performance is in the plan, run the **Performance** sub-agent after functional has
    finished — never in parallel, because load against the same environment distorts functional
    timings.
-9. Run the **Final Analysis** sub-agent with the full markdown of every stage that ran, the
-   heartbeat verdict, and the ticket map — it cannot attribute failures to tickets without it.
-   It returns `green`, `amber` or `red` with a `verdict_reason`, and publishes the config's
-   `verdict` report type for green and amber, the `failure` type for red. Amber means the run
-   found no regression but could not verify something — uncovered code, or a degraded environment;
-   report it as its own outcome rather than rounding it to pass or fail.
-10. Verify every expected report was published: each sub-agent's output must show a successful
+10. Run the **Final Analysis** sub-agent with the full markdown of every stage that ran, the
+    heartbeat verdict, and the ticket map — it cannot attribute failures to tickets without it.
+    It returns `green`, `amber` or `red` with a `verdict_reason`, and publishes the config's
+    `verdict` report type — one type for every colour, so a PR that changes verdict between runs
+    replaces its report rather than leaving a stale one behind. Amber means the run found no
+    regression but could not verify something — uncovered code, or a degraded environment; report
+    it as its own outcome rather than rounding it to pass or fail.
+11. Verify every expected report was published: each sub-agent's output must show a successful
     POST. A publish failure means the report is lost, so re-run that stage's publish step rather
     than reporting success. Every stage publishes both `analysis_markdown` and a populated
     `analysis_json`; a stage that published `{}` has thrown its structured result away and must
     republish.
-11. Summarise the run for the user: plan chosen, heartbeat verdict, per-stage outcome, per-ticket
+12. Close the agent log for the run. Each sub-agent writes its own row — do not write theirs for
+    them, because a child that dies still needs the row it wrote before dying, and only it knows
+    what it did. This session owns three things they cannot do:
+
+    a. **Backfill each child's ACUs.** A session cannot read its own final `acus_consumed` while
+       still running, so children log without it. Once a child settles, read its
+       `acus_consumed` and re-post that stage's row with the same `--appname --pr-id --run-id
+       --stage` plus `--acus`. Row ids are deterministic, so the write replaces rather than
+       duplicates — which also means the re-post must repeat the `--status`, `--counts` and
+       `--report-ids` the child reported, or the fuller row is lost.
+    b. **Log a row for any stage that never reported.** A sub-agent that failed outright wrote
+       nothing: log it `--status error --notes "<what happened>"`. A missing row is
+       indistinguishable from a stage nobody dispatched.
+    c. **Log this session's own row** — `--stage orchestrator`, the wall-clock from step 3, the
+       sum of the children's ACUs, and `--acus-are-floor`, because this session's own
+       consumption is still accruing as it writes. The exact figure is available afterwards from
+       the sessions API; the flag is what stops a dashboard presenting a lower bound as the
+       total.
+
+    A failed agent-log write never fails the run: the tool exits 0 and reports to stderr.
+13. Summarise the run for the user: plan chosen, heartbeat verdict, per-stage outcome, per-ticket
     status, the verdict **with its reason**, the CRaaS document ids, and the single most
     actionable finding.
 
@@ -93,6 +118,9 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
 - Every stage that runs produces exactly one CRaaS document, using the report types in
   `reports.types` from the config.
 - Deliverable: a summary to the user plus the CRaaS document ids for the run.
+- One `run_id`, minted once, shared by every stage's agent-log row.
+- Every dispatched stage has exactly one agent-log row, including skipped and errored ones, plus
+  one `orchestrator` row for the chain.
 - Validation: each sub-agent reported a successful publish for its stage, with a non-empty
   `analysis_json`.
 
@@ -107,6 +135,14 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
   expects history.
 - If a sub-agent fails outright, record the stage as `error` and continue; a missing stage beats
   an aborted run with no reports at all.
+- Agent-log rows are the opposite of reports: keyed `{appname}_{pr_id}_{stage}_{run_id}`, they
+  accumulate instead of overwriting, which is the point — cost and duration only mean anything as
+  a series. The run can be read back (unlike the report API):
+  `GET {agent_log.endpoint}/{appname}/runs/{run_id}` returns every stage plus totals, and
+  `/summary` returns per-run totals for trends.
+- That container also holds CRaaS's own per-PR text logs (`PR163`, one free-text `agentLog` field
+  keyed by PR number). Those overwrite per PR and are written by the command centre, not by this
+  chain; rows written here carry `doctype: agent_log` so a consumer can tell them apart.
 - The ticket pattern is deliberately loose about position but strict about shape. If a repository
   uses a different prefix, change the pattern rather than falling back to reading PR titles or
   branch names — one ticket per PR is exactly what per-ticket attribution is meant to avoid.
@@ -115,6 +151,8 @@ Each returns structured output, so read the fields (`recommend`, `verdict`, `pas
 - Do not run functional and performance concurrently.
 - Do not skip the heartbeat, whatever the PR analysis recommends.
 - Do not write or publish stage reports from this session — each sub-agent owns its own.
+- Do not write a child's agent-log row on its behalf while it is still running, and do not treat
+  the ACU total as exact when it includes this session's own floor.
 - Do not hardcode repository paths, test commands or report types that the config declares.
 - Do not infer ticket ids from the PR title or branch name; commits are the only source, because
   attribution needs to know which commit touched which file.

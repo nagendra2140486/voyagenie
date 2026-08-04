@@ -45,7 +45,22 @@ Refuse to run without the URLs — there is nothing to check.
    fields yourself. The API requires `analysis_json`; sending `{}` throws away every check result
    CRaaS could otherwise query. Note in the report when the report type shares a document id with
    another stage, because the later write wins.
-8. Return the structured output plus the markdown to the orchestrator.
+8. Record the stage in the agent log as the **last action, whatever the outcome**, using
+   `agent_log.command` from the config:
+
+   ```
+   python3 devin/tools/agent_log.py --appname <appname> --pr-id <pr_id> --run-id <run_id> \
+     --stage heartbeat --status passed --started-at <epoch taken before step 1> \
+     --commit <commit> --environment <environment> --report-ids <published document id> \
+     --counts '{"checks": 11, "passed": 10, "failed": 0, "skipped": 1}' \
+     --extra '{"heartbeat_verdict": "healthy", "slowest_check_ms": 330}'
+   ```
+
+   `--status` describes whether the *stage* ran, not whether the environment was healthy: an
+   unhealthy environment is a `passed` stage with `heartbeat_verdict: unhealthy`, because the
+   check did its job. Take the timestamp before step 1. The tool exits 0 even when the write
+   fails, so this never turns a completed stage into a failed one.
+9. Return the structured output plus the markdown to the orchestrator.
 
 ## Specifications
 - Structured output: `verdict` (`healthy` / `unhealthy` / `not_ready`), `passed`, `failed`,
@@ -55,6 +70,8 @@ Refuse to run without the URLs — there is nothing to check.
 - Deliverable: one published heartbeat document carrying both the markdown and the JSON, and the
   markdown returned in-session.
 - `analysis_json` mirrors the structured output; the two must not disagree.
+- One agent-log row, under the orchestrator's `run_id`, distinguishing stage status from
+  environment health.
 - Validation: the number of checks reported matches the number executed.
 
 ## Advice and Pointers

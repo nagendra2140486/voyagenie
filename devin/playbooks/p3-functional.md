@@ -65,13 +65,35 @@ inputs and the rails.
     verdict, selection size, pass/fail/skip counts, duration, every failure with its error, and a
     short section on what a green run does *not* prove. Publish the counts and failures as JSON
     via `--json-file` as well.
-11. Return the structured output and both markdown documents to the orchestrator.
+11. Record the stage in the agent log as the **last action, whatever the outcome**, using
+    `agent_log.command` from the config. This stage owns two report types, so log two rows — one
+    for the selection, one for the execution — or the impact stage disappears from the run's cost:
+
+    ```
+    python3 devin/tools/agent_log.py --appname <appname> --pr-id <pr_id> --run-id <run_id> \
+      --stage impact --status passed --started-at <epoch before step 3> \
+      --report-ids <impact document id> \
+      --counts '{"impacted": 5, "mandatory": 7, "rail_escalated": 20, "selected": 32,
+                 "total": 35}'
+
+    python3 devin/tools/agent_log.py --appname <appname> --pr-id <pr_id> --run-id <run_id> \
+      --stage functional --status failed --started-at <epoch before step 9> \
+      --commit <commit> --environment <environment> --report-ids <functional document id> \
+      --counts '{"executed": 26, "passed": 22, "failed": 4, "not_executed": 6}'
+    ```
+
+    `executed` must exclude tests that were selected but never ran — a throttled or unreachable
+    target makes those `not_executed`, and counting them as passed is the one number in this
+    chain nobody would catch being wrong. A skipped execution (empty selection, null runner) is
+    logged `--status skipped` with the reason in `--notes`, not omitted.
+12. Return the structured output and both markdown documents to the orchestrator.
 
 ## Specifications
 - Structured output: `selected`, `total`, `passed`, `failed`, `skipped`, `fallback_reason`,
   `impacted`, `mandatory`, `rail_escalated`, `uncovered` (each with `path`, `critical`, `reason`),
   `coverage_gaps`, `impact_report_id`, `functional_report_id`, `impact_markdown`,
   `functional_markdown`.
+- Two agent-log rows under the orchestrator's `run_id`: `impact` and `functional`.
 - `impacted + mandatory + rail_escalated` equals the number of tests executed, so the final
   report's counts are checkable rather than implied.
 - The number of tests executed must equal the number selected; report any discrepancy.

@@ -7,9 +7,8 @@ Playbook: PRQE Final Analysis
 ## Overview
 Reads every stage report from one PRQE run, attributes each failure to a root cause **and to the
 remediation ticket that caused it**, and issues the run's verdict. Publishes one markdown document
-to the CRaaS PR QE Impact API — the verdict report when everything is green, the failure analysis
-when anything failed — and returns the verdict to the orchestrator. The document ends with a
-machine-readable verdict block that CRaaS parses.
+to the CRaaS PR QE Impact API — the verdict report, whatever the colour — and returns the verdict
+to the orchestrator. The document ends with a machine-readable verdict block that CRaaS parses.
 
 Repository-independent: the repo's `devin/config.yaml` supplies the report types.
 
@@ -23,7 +22,7 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
 - Optional: `commit`, `environment`, `run_id`
 
 ## Procedure
-1. Read `devin/config.yaml` for the `verdict` and `failure` report types.
+1. Read `devin/config.yaml` for the `verdict` report type.
 2. Build the stage table: every stage, its status (`passed` / `failed` / `skipped` / `error`),
    its key numbers and its CRaaS document id. A skipped stage must carry the reason it was
    skipped — an unexplained gap reads as a silent pass.
@@ -82,12 +81,27 @@ Repository-independent: the repo's `devin/config.yaml` supplies the report types
     looking at the report itself. Emit exactly one such block per report and strip backticks from
     any embedded test name or error message, or the fence closes early. The two must be byte-for-
     byte the same object.
-11. Publish with the `verdict` report type for `green` and `amber`, the `failure` type for `red`,
-    passing
+11. Publish with the `verdict` report type — **the same type for green, amber and red** — passing
     `--json-file {report_dir}/verdict.json` so the verdict lands in `analysis_json` as a real
-    object rather than something CRaaS has to regex out of the markdown. Where those types collide
-    with another stage's document id, note it — the later write wins.
-12. Return the structured output plus the markdown to the orchestrator.
+    object rather than something CRaaS has to regex out of the markdown. One id per PR means a
+    run that changes colour replaces its predecessor instead of leaving a stale document under a
+    second name; the colour is read from `verdict`, not from the document's name.
+12. Record the stage in the agent log as the **last action, whatever the outcome**, using
+    `agent_log.command` from the config. This is the only row that carries the verdict, so a
+    dashboard can answer "how did this run end" without reading a report:
+
+    ```
+    python3 devin/tools/agent_log.py --appname <appname> --pr-id <pr_id> --run-id <run_id> \
+      --stage final --status passed --started-at <epoch taken before step 1> \
+      --commit <commit> --environment <environment> --report-ids <published document id> \
+      --verdict amber --verdict-reason environment \
+      --tickets '{"VIT0016231": "passed", "VIT0016237": "no_coverage"}'
+    ```
+
+    `--status` is whether this analysis ran; `--verdict` is what it concluded. A red verdict
+    reached successfully is `--status passed --verdict red`, and conflating the two would make
+    every failing run look like a broken pipeline.
+13. Return the structured output plus the markdown to the orchestrator.
 
 ## Verdict block schema
 
@@ -147,6 +161,8 @@ The four count fields are deliberately separate and must satisfy
 - Every ticket in the map appears in the table and the JSON, including ones with no coverage.
 - Deliverable: one published document carrying the markdown (ending in exactly one verdict block)
   and the same verdict as `analysis_json`, plus the markdown returned in-session.
+- One agent-log row under the orchestrator's `run_id`, carrying the verdict, its reason and the
+  per-ticket statuses — and never conflating stage status with verdict.
 - Validation: the stage table accounts for all five stages, including the skipped ones; the
   verdict block parses as JSON; and the published `analysis_json` equals it.
 
@@ -176,3 +192,4 @@ The four count fields are deliberately separate and must satisfy
 - Do not emit more than one fenced `json` block, or place the verdict block anywhere but last.
 - Do not omit a stage from the table because it was skipped.
 - Do not comment on the pull request.
+- Do not log `--status failed` because the verdict was red; the analysis succeeded.
