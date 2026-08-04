@@ -129,7 +129,10 @@ jobs:
         env:
           DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
         run: |
-          PR_NUM=$(echo "$PR_URL" | grep -oP 'pull/\K\d+')
+          PR_URL="${{ steps.pr.outputs.pr_url }}"
+          PR_NUM=$(echo "$PR_URL" | grep -oP 'pull/\K\d+') || true
+          echo "PR_URL=$PR_URL  PR_NUM=$PR_NUM"
+          if [ -z "$PR_NUM" ]; then echo "No PR number found"; exit 1; fi
           python3 QE_Orchestrator_Devin.py "$PR_NUM"
 
       # - name: Orchestrator - Trigger run
