@@ -116,14 +116,14 @@ jobs:
           echo "PR URL: $PR_URL"
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
 
-      - name: PR Impact Analysis (Devin)
-        env:
-          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
-        run: |
-          pip install requests azure-cosmos --quiet
-          PR_URL="${{ steps.pr.outputs.pr_url }}"
-          PR_NUM=$(echo "$PR_URL" | grep -oP 'pull/\K\d+')
-          python3 QE_pranalysis_devinsession_cosmos.py voyagenie "$PR_NUM"
+      # - name: PR Impact Analysis (Devin)
+      #   env:
+      #     DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+      #   run: |
+      #     pip install requests azure-cosmos --quiet
+      #     PR_URL="${{ steps.pr.outputs.pr_url }}"
+      #     PR_NUM=$(echo "$PR_URL" | grep -oP 'pull/\K\d+')
+      #     python3 QE_pranalysis_devinsession_cosmos.py voyagenie "$PR_NUM"
 
       - name: Devin Orchestrator
         env:
