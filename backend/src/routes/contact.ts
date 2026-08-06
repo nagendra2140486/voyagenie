@@ -35,19 +35,21 @@ export const inquirySchema = z.object({
 });
 
 contactRouter.post('/', async (req, res) => {
-  if (!(await consumeInquiryQuota(req.sessionId))) {
-    res.status(429).json({
-      code: 'rate_limited',
-      message: 'Too many inquiries from this session. Please try again later.',
-    });
-    return;
-  }
+  // Validate before consuming quota: a typo in the form is not an inquiry, and spending the
+  // hourly allowance on rejected payloads locks a legitimate sender out of their own form.
   const parsed = inquirySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
       code: 'invalid_inquiry',
       message: parsed.error.issues[0]?.message ?? 'Invalid inquiry payload.',
       field: parsed.error.issues[0]?.path.join('.'),
+    });
+    return;
+  }
+  if (!(await consumeInquiryQuota(req.sessionId))) {
+    res.status(429).json({
+      code: 'rate_limited',
+      message: 'Too many inquiries from this session. Please try again later.',
     });
     return;
   }

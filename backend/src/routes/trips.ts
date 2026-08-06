@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import { z } from 'zod';
 import { query } from '../db.js';
 
@@ -13,6 +13,15 @@ export const tripCreateSchema = z.object({
   source: z.enum(['ai_itinerary', 'ai_budget', 'manual', 'package']).default('ai_itinerary'),
   itineraryText: z.string().min(1).max(20000),
 });
+
+const parseTripId = (raw: string, res: Response): number | null => {
+  const id = Number(raw);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ code: 'invalid_id', message: 'Trip id must be an integer.' });
+    return null;
+  }
+  return id;
+};
 
 export const tripUpdateSchema = z.object({
   title: z.string().trim().min(3).max(160).optional(),
@@ -41,10 +50,9 @@ tripsRouter.post('/', async (req, res) => {
 });
 
 tripsRouter.get('/:id', async (req, res) => {
-  const [trip] = await query('SELECT * FROM trips WHERE id = $1 AND session_id = $2', [
-    Number(req.params.id),
-    req.sessionId,
-  ]);
+  const id = parseTripId(req.params.id, res);
+  if (id === null) return;
+  const [trip] = await query('SELECT * FROM trips WHERE id = $1 AND session_id = $2', [id, req.sessionId]);
   if (!trip) {
     res.status(404).json({ code: 'not_found', message: 'Trip not found.' });
     return;
@@ -53,6 +61,8 @@ tripsRouter.get('/:id', async (req, res) => {
 });
 
 tripsRouter.patch('/:id', async (req, res) => {
+  const id = parseTripId(req.params.id, res);
+  if (id === null) return;
   const parsed = tripUpdateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ code: 'invalid_trip', message: 'Invalid update payload.' });
@@ -64,7 +74,7 @@ tripsRouter.patch('/:id', async (req, res) => {
        destination = COALESCE($4, destination),
        budget = COALESCE($5, budget)
      WHERE id = $1 AND session_id = $2 RETURNING *`,
-    [Number(req.params.id), req.sessionId, parsed.data.title ?? null, parsed.data.destination ?? null, parsed.data.budget ?? null],
+    [id, req.sessionId, parsed.data.title ?? null, parsed.data.destination ?? null, parsed.data.budget ?? null],
   );
   if (!trip) {
     res.status(404).json({ code: 'not_found', message: 'Trip not found.' });
@@ -74,12 +84,14 @@ tripsRouter.patch('/:id', async (req, res) => {
 });
 
 tripsRouter.post('/:id/clone', async (req, res) => {
+  const id = parseTripId(req.params.id, res);
+  if (id === null) return;
   const [trip] = await query(
     `INSERT INTO trips (session_id, title, destination, days, budget, travel_type, source, itinerary_text)
      SELECT session_id, title || ' (copy)', destination, days, budget, travel_type, source, itinerary_text
      FROM trips WHERE id = $1 AND session_id = $2
      RETURNING *`,
-    [Number(req.params.id), req.sessionId],
+    [id, req.sessionId],
   );
   if (!trip) {
     res.status(404).json({ code: 'not_found', message: 'Trip not found.' });
@@ -89,10 +101,9 @@ tripsRouter.post('/:id/clone', async (req, res) => {
 });
 
 tripsRouter.delete('/:id', async (req, res) => {
-  const rows = await query('DELETE FROM trips WHERE id = $1 AND session_id = $2 RETURNING id', [
-    Number(req.params.id),
-    req.sessionId,
-  ]);
+  const id = parseTripId(req.params.id, res);
+  if (id === null) return;
+  const rows = await query('DELETE FROM trips WHERE id = $1 AND session_id = $2 RETURNING id', [id, req.sessionId]);
   if (!rows.length) {
     res.status(404).json({ code: 'not_found', message: 'Trip not found.' });
     return;
