@@ -1,0 +1,35 @@
+trigger:
+- nagendra/functionaltests
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '20.x'
+  displayName: 'Install Node.js'
+
+- script: |
+    npm ci
+  workingDirectory: tests
+  displayName: 'Install Dependencies'
+
+- script: |
+    npx playwright install --with-deps
+  workingDirectory: tests
+  displayName: 'Install Playwright Browsers'
+
+- script: |
+    npx playwright test
+  workingDirectory: tests
+  displayName: 'Run Playwright Tests'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: 'tests/playwright-report'
+    artifact: 'playwright-report'
+  condition: always()
+  displayName: 'Publish Playwright Report'
