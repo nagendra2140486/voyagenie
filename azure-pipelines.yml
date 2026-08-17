@@ -26,7 +26,8 @@ steps:
     npx playwright test
   workingDirectory: tests
   displayName: 'Run Playwright Tests'
-
+  env:
+    VOYAGENIE_BASE_URL: https://voyagenie-app.azurewebsites.net/
 - task: PublishPipelineArtifact@1
   inputs:
     targetPath: 'tests/playwright-report'
