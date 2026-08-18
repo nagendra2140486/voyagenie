@@ -7,10 +7,10 @@ pool:
 steps:
 - checkout: self
 
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
+- task: UseNode@1
   displayName: 'Install Node.js'
+  inputs:
+    version: '20.x'
 
 - script: |
     npm ci
@@ -23,14 +23,25 @@ steps:
   displayName: 'Install Playwright Browsers'
 
 - script: |
-    npx playwright test
+    npx playwright test --reporter=html,junit
   workingDirectory: tests
   displayName: 'Run Playwright Tests'
   env:
-    VOYAGENIE_BASE_URL: https://voyagenie-app.azurewebsites.net/
+    VOYAGENIE_BASE_URL: 'https://voyagenie-app.azurewebsites.net/'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  condition: always()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/*.xml'
+    searchFolder: 'tests'
+    failTaskOnFailedTests: false
+    testRunTitle: 'Voyagenie Playwright Tests'
+
 - task: PublishPipelineArtifact@1
+  displayName: 'Publish Playwright Report'
+  condition: always()
   inputs:
     targetPath: 'tests/playwright-report'
     artifact: 'playwright-report'
-  condition: always()
-  displayName: 'Publish Playwright Report'
