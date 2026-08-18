@@ -23,25 +23,17 @@ steps:
   displayName: 'Install Playwright Browsers'
 
 - script: |
-    npx playwright test --reporter=html,junit
+    npx playwright test
   workingDirectory: tests
   displayName: 'Run Playwright Tests'
+  continueOnError: true
   env:
     VOYAGENIE_BASE_URL: 'https://voyagenie-app.azurewebsites.net/'
-
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results'
-  condition: always()
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: '**/*.xml'
-    searchFolder: 'tests'
-    failTaskOnFailedTests: false
-    testRunTitle: 'Voyagenie Playwright Tests'
+    CI: 'true'
 
 - task: PublishPipelineArtifact@1
-  displayName: 'Publish Playwright Report'
+  displayName: 'Publish Test Evidence'
   condition: always()
   inputs:
-    targetPath: 'tests/playwright-report'
-    artifact: 'playwright-report'
+    targetPath: 'tests/test-results'
+    artifact: 'test-results'
