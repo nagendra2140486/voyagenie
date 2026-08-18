@@ -23,7 +23,7 @@ steps:
   displayName: 'Install Playwright Browsers'
 
 - script: |
-    npx playwright test --reporter=json > results.json
+    npx playwright test --reporter=json > playwright-raw.json
   workingDirectory: tests
   displayName: 'Run Playwright Tests'
   continueOnError: true
@@ -31,12 +31,19 @@ steps:
     VOYAGENIE_BASE_URL: 'https://voyagenie-app.azurewebsites.net/'
     CI: 'true'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish JSON Results'
-  condition: always()
-  inputs:
-    targetPath: 'tests/results.json'
-    artifact: 'playwright-json'
+- script: |
+    echo "Generating JSON output..."
+
+    if [ -f playwright-raw.json ]; then
+      cp playwright-raw.json results.json
+      echo "===== RESULTS.JSON ====="
+      cat results.json
+    else
+      echo '{"status":"FAILED","message":"playwright-raw.json not found"}' > results.json
+      cat results.json
+    fi
+  workingDirectory: tests
+  displayName: 'Generate JSON Output'
 
 - task: PublishPipelineArtifact@1
   displayName: 'Publish Test Evidence'
@@ -44,3 +51,10 @@ steps:
   inputs:
     targetPath: 'tests/test-results'
     artifact: 'test-results'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish JSON Results'
+  condition: always()
+  inputs:
+    targetPath: 'tests/results.json'
+    artifact: 'json-results'
