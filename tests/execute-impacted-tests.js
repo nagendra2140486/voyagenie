@@ -14,16 +14,18 @@ if (!testCases.length) {
 }
 
 /*
- * Build unique spec list
+ * Convert paths for execution from tests folder
  */
 const specs = [
   ...new Set(
-    testCases.map(tc => tc.spec)
+    testCases.map(tc =>
+      tc.spec.replace(/^tests\//, '')
+    )
   )
 ];
 
 /*
- * Build grep expression from test titles
+ * Build grep from titles
  */
 const grep = testCases
   .map(tc =>
@@ -31,12 +33,15 @@ const grep = testCases
   )
   .join('|');
 
-/*
- * Execute only impacted tests
- */
-const command = `npx playwright test ${specs.join(' ')} --grep "${grep}" --reporter=json > results.json`;
+console.log('Specs to execute:');
+console.log(specs);
 
-console.log('Executing command:');
+console.log('Grep:');
+console.log(grep);
+
+const command =
+  `npx playwright test ${specs.join(' ')} --grep "${grep}" --reporter=json > results.json`;
+
 console.log(command);
 
 try {
@@ -48,13 +53,13 @@ try {
 
 } catch (err) {
 
-  console.error('Playwright execution finished with failures');
+  console.error('Playwright execution completed with failures');
   console.error(err.message);
 
 }
 
 /*
- * Read Playwright results
+ * Read results.json
  */
 let results = {};
 
@@ -75,11 +80,11 @@ try {
 
 }
 
-/*
- * Extract execution stats
- */
 const stats = results.stats || {};
 
+/*
+ * Build analysis_json
+ */
 const analysisJson = {
   stage: 'functional',
   pr_id: payload.pr_id,
@@ -93,7 +98,7 @@ const analysisJson = {
 };
 
 /*
- * Generate markdown summary
+ * Build analysis_markdown
  */
 const analysisMarkdown = `
 # Impacted Regression Execution
@@ -125,9 +130,6 @@ ${specs.map(spec => `- ${spec}`).join('\n')}
 ${testCases.map(tc => `- ${tc.title}`).join('\n')}
 `;
 
-/*
- * Final report matching publish API schema
- */
 const regressionReport = {
   id:
     payload.id ||
