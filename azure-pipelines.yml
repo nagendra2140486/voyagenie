@@ -13,27 +13,64 @@ steps:
 - checkout: self
 
 - task: UseNode@1
+  displayName: 'Install Node.js'
   inputs:
     version: '20.x'
 
 - script: |
     npm ci
+  workingDirectory: tests
   displayName: 'Install Dependencies'
 
 - script: |
     npx playwright install --with-deps
+  workingDirectory: tests
   displayName: 'Install Playwright Browsers'
 
 - script: |
     echo '${{ parameters.payload }}' > payload.json
-  displayName: 'Save Agent Payload'
+
+    echo "Payload saved successfully"
+    ls -la
+  workingDirectory: tests
+  displayName: 'Save Incoming Payload'
 
 - script: |
-    node process-payload.js
-  displayName: 'Execute Impacted Tests'
+    node execute-impacted-tests.js
+  workingDirectory: tests
+  displayName: 'Execute Regression Tests'
+
+- script: |
+    echo "Publishing regression report"
+
+    curl --fail \
+      --location \
+      --request POST \
+      --header "Content-Type: application/json" \
+      --data @regression-report.json \
+      "https://claude-agent-services-e9g8gzh8d3fgbxe6.canadacentral-01.azurewebsites.net/api/publish"
+
+  workingDirectory: tests
+  displayName: 'Publish Regression Report'
+  condition: always()
 
 - task: PublishPipelineArtifact@1
+  displayName: 'Publish Regression Report Artifact'
   condition: always()
   inputs:
-    targetPath: 'results.json'
-    artifact: 'json-results'
+    targetPath: 'tests/regression-report.json'
+    artifact: 'regression-report'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Playwright Results'
+  condition: always()
+  inputs:
+    targetPath: 'tests/results.json'
+    artifact: 'playwright-results'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Test Evidence'
+  condition: always()
+  inputs:
+    targetPath: 'tests/test-results'
+    artifact: 'test-results'
