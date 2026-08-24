@@ -7,9 +7,6 @@ const payload = JSON.parse(
 
 console.log(`Running regression suite for ${payload.appname}`);
 
-let executionStatus = 'PASSED';
-let playwrightResults = {};
-
 try {
 
   execSync(
@@ -22,26 +19,8 @@ try {
 
 } catch (err) {
 
-  executionStatus = 'FAILED';
-
   console.error('Playwright execution failed');
   console.error(err.message);
-
-}
-
-try {
-
-  if (fs.existsSync('results.json')) {
-
-    playwrightResults = JSON.parse(
-      fs.readFileSync('results.json', 'utf8')
-    );
-
-  }
-
-} catch (err) {
-
-  console.log('Unable to parse results.json');
 
 }
 
@@ -68,6 +47,7 @@ const regressionReport = {
     payload.created_at ||
     new Date().toISOString()
 };
+
 fs.writeFileSync(
   'regression-report.json',
   JSON.stringify(regressionReport, null, 2)
