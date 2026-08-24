@@ -46,16 +46,28 @@ try {
 }
 
 const regressionReport = {
-  appname: payload.appname,
-  reporttype: 'regression-report',
-  repository: payload.repository || '',
-  pr_id: payload.pr_id || '',
-  generated_at: new Date().toISOString(),
-  status: executionStatus,
-  payload,
-  playwright_results: playwrightResults
-};
+  id:
+    payload.id ||
+    `${payload.appname}_${payload.reporttype}_${payload.pr_id}`,
 
+  appname: payload.appname,
+
+  reporttype: payload.reporttype,
+
+  repository: payload.repository,
+
+  pr_id: payload.pr_id,
+
+  analysis_markdown:
+    payload.analysis_markdown || '',
+
+  analysis_json:
+    payload.analysis_json || {},
+
+  created_at:
+    payload.created_at ||
+    new Date().toISOString()
+};
 fs.writeFileSync(
   'regression-report.json',
   JSON.stringify(regressionReport, null, 2)
