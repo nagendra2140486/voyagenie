@@ -42,6 +42,7 @@ try {
 } catch (err) {
 
   console.log('Unable to parse results.json');
+
 }
 
 const regressionReport = {
@@ -50,4 +51,14 @@ const regressionReport = {
   repository: payload.repository || '',
   pr_id: payload.pr_id || '',
   generated_at: new Date().toISOString(),
-  status: executionStatus
+  status: executionStatus,
+  payload,
+  playwright_results: playwrightResults
+};
+
+fs.writeFileSync(
+  'regression-report.json',
+  JSON.stringify(regressionReport, null, 2)
+);
+
+console.log('regression-report.json generated successfully');
