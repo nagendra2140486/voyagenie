@@ -1,119 +1,39 @@
 trigger: none
 
-
 parameters:
-
-- name: specFiles
-
+- name: payload
   type: string
-
   default: ''
 
-
 pool:
-
   vmImage: 'ubuntu-latest'
-
 
 steps:
 
-
 - checkout: self
 
-
 - task: UseNode@1
-
-  displayName: 'Install Node.js'
-
   inputs:
-
     version: '20.x'
 
-
 - script: |
-
     npm ci
-
-  workingDirectory: tests
-
   displayName: 'Install Dependencies'
 
-
 - script: |
-
     npx playwright install --with-deps
-
-  workingDirectory: tests
-
   displayName: 'Install Playwright Browsers'
 
+- script: |
+    echo '${{ parameters.payload }}' > payload.json
+  displayName: 'Save Agent Payload'
 
 - script: |
-
-
-    echo "Requested Specs:"
-
-    echo "${{ parameters.specFiles }}"
-
-
-    if [ -z "${{ parameters.specFiles }}" ]; then
-
-
-      echo "Running Full Suite"
-
-
-      npx playwright test --reporter=json > results.json
-
-
-    else
-
-
-      echo "Running Impacted Specs"
-
-
-      npx playwright test \
-
-      ${{ parameters.specFiles }} \
-
-      --reporter=json > results.json
-
-
-    fi
-
-
-  workingDirectory: tests
-
+    node process-payload.js
   displayName: 'Execute Impacted Tests'
 
-
-  env:
-
-    VOYAGENIE_BASE_URL: 'https://voyagenie-app.azurewebsites.net/'
-
-    CI: 'true'
-
-
 - task: PublishPipelineArtifact@1
-
-  displayName: 'Publish JSON Results'
-
   condition: always()
-
   inputs:
-
-    targetPath: 'tests/results.json'
-
+    targetPath: 'results.json'
     artifact: 'json-results'
-
-
-- task: PublishPipelineArtifact@1
-
-  displayName: 'Publish Test Evidence'
-
-  condition: always()
-
-  inputs:
-
-    targetPath: 'tests/test-results'
-
-    artifact: 'test-results'
