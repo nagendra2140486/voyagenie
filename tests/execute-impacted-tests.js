@@ -26,25 +26,43 @@ const specs = [
   )
 ];
 
-/*
- * Run ONLY impacted test titles
- */
-const titles = testCases.map(tc => tc.title);
+console.log('Selected specs:');
+console.log(specs);
 
-const grepPattern = titles
+/*
+ * Extract only the actual Playwright test title.
+ *
+ * Payload:
+ *   "Voyagenie commercial journeys > route / renders"
+ *
+ * Test title:
+ *   "route / renders"
+ */
+const impactedTitles = testCases.map(tc => {
+  const parts = tc.title.split('>');
+  return parts[parts.length - 1].trim();
+});
+
+console.log('Selected impacted tests:');
+console.log(impactedTitles);
+
+/*
+ * Escape regex characters for Playwright grep
+ */
+const grepPattern = impactedTitles
   .map(title =>
     title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   )
   .join('|');
 
-console.log('Selected specs:');
-console.log(specs);
+console.log('Grep pattern:');
+console.log(grepPattern);
 
-console.log('Selected impacted tests:');
-console.log(titles);
-
+/*
+ * Run only impacted tests
+ */
 const command =
-  `npx playwright test --grep "${grepPattern}" --reporter=json > results.json`;
+  `npx playwright test ${specs.join(' ')} --grep "${grepPattern}" --reporter=json > results.json`;
 
 console.log('Executing command:');
 console.log(command);
@@ -89,6 +107,9 @@ const actualExecuted =
   (stats.skipped || 0) +
   (stats.flaky || 0);
 
+/*
+ * Analysis JSON
+ */
 const analysisJson = {
   stage: 'functional',
 
@@ -123,6 +144,9 @@ const analysisJson = {
   }
 };
 
+/*
+ * Analysis Markdown
+ */
 const analysisMarkdown = `
 # Functional Execution
 
@@ -171,16 +195,4 @@ const regressionReport = {
 
   analysis_markdown: analysisMarkdown,
 
-  analysis_json: analysisJson,
-
-  created_at:
-    payload.generated_at ||
-    new Date().toISOString()
-};
-
-fs.writeFileSync(
-  'regression-report.json',
-  JSON.stringify(regressionReport, null, 2)
-);
-
-console.log('regression-report.json generated successfully');
+  analysis
