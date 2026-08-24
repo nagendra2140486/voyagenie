@@ -30,24 +30,39 @@ console.log('Selected specs:');
 console.log(specs);
 
 /*
- * Extract only the actual Playwright test title.
- *
- * Payload:
- *   "Voyagenie commercial journeys > route / renders"
- *
- * Test title:
- *   "route / renders"
+ * Extract actual test titles
  */
 const impactedTitles = testCases.map(tc => {
   const parts = tc.title.split('>');
   return parts[parts.length - 1].trim();
 });
 
-console.log('Selected impacted tests:');
+console.log('Impacted test titles:');
 console.log(impactedTitles);
 
 /*
- * Escape regex characters for Playwright grep
+ * Helpful debugging
+ */
+try {
+  console.log('\n===== PLAYWRIGHT TEST LIST =====\n');
+
+  execSync(
+    `npx playwright test ${specs.join(' ')} --list`,
+    {
+      stdio: 'inherit',
+      shell: true,
+      env: process.env
+    }
+  );
+
+  console.log('\n===== END TEST LIST =====\n');
+} catch (err) {
+  console.error('Unable to list tests');
+  console.error(err.message);
+}
+
+/*
+ * Build grep pattern
  */
 const grepPattern = impactedTitles
   .map(title =>
@@ -55,11 +70,11 @@ const grepPattern = impactedTitles
   )
   .join('|');
 
-console.log('Grep pattern:');
+console.log('Generated grep pattern:');
 console.log(grepPattern);
 
 /*
- * Run only impacted tests
+ * Execute impacted tests only
  */
 const command =
   `npx playwright test ${specs.join(' ')} --grep "${grepPattern}" --reporter=json > results.json`;
@@ -79,7 +94,7 @@ try {
 }
 
 /*
- * Read Playwright results
+ * Read results
  */
 let results = {};
 
@@ -108,6 +123,42 @@ const actualExecuted =
   (stats.flaky || 0);
 
 /*
+ * Collect failures
+ */
+const failures = [];
+
+if (Array.isArray(results.suites)) {
+  const walkSuites = suites => {
+    for (const suite of suites) {
+
+      if (suite.specs) {
+        for (const spec of suite.specs) {
+
+          const failed =
+            spec.tests?.some(
+              test =>
+                test.status === 'unexpected'
+            );
+
+          if (failed) {
+            failures.push({
+              test: spec.title,
+              attribution: 'test_failure'
+            });
+          }
+        }
+      }
+
+      if (suite.suites) {
+        walkSuites(suite.suites);
+      }
+    }
+  };
+
+  walkSuites(results.suites);
+}
+
+/*
  * Analysis JSON
  */
 const analysisJson = {
@@ -117,63 +168,57 @@ const analysisJson = {
 
   runner: 'playwright',
 
-  selection_mode: payload.selection_mode,
+  impacted_analysis: {
+    total_impacted:
+      payload.total_impacted ||
+      testCases.length,
 
-  selection_reason: payload.selection_reason,
+    suite_size:
+      payload.total_in_suite,
 
-  impacted_tests_selected:
-    payload.total_impacted ||
-    testCases.length,
+    selection_mode:
+      payload.selection_mode,
 
-  total_suite_size:
-    payload.total_in_suite,
+    selection_reason:
+      payload.selection_reason
+  },
 
-  selected_specs: specs,
-
-  selected_tests: testCases.map(tc => ({
-    title: tc.title,
-    spec: tc.spec
-  })),
-
-  execution: {
-    actual_tests_executed: actualExecuted,
+  deployed: {
+    executed: actualExecuted,
     passed: stats.expected || 0,
-    failed: stats.unexpected || 0,
-    skipped: stats.skipped || 0,
-    flaky: stats.flaky || 0
-  }
+    failed: stats.unexpected || 0
+  },
+
+  executed_tests:
+    testCases.map(tc => ({
+      title: tc.title,
+      spec: tc.spec
+    })),
+
+  failures
 };
 
 /*
  * Analysis Markdown
  */
 const analysisMarkdown = `
-# Functional Execution
-
-Application: ${payload.appname}
-
-PR: ${payload.pr_id}
+# Functional Execution — ${payload.appname} PR #${payload.pr_id}
 
 ## Impact Analysis
 
-- Selection Mode: ${payload.selection_mode}
-- Selection Reason: ${payload.selection_reason}
-- Impacted Tests Selected: ${payload.total_impacted || testCases.length}
-- Suite Size: ${payload.total_in_suite || 'N/A'}
+| Metric | Value |
+| --- | --- |
+| Selection Mode | ${payload.selection_mode} |
+| Impacted Tests | ${payload.total_impacted || testCases.length} |
+| Suite Size | ${payload.total_in_suite || 'N/A'} |
 
-## Execution Summary
+## Execution Result
 
 | Metric | Count |
-|----------|----------:|
-| Actual Tests Executed | ${actualExecuted} |
+| --- | --- |
+| Executed | ${actualExecuted} |
 | Passed | ${stats.expected || 0} |
 | Failed | ${stats.unexpected || 0} |
-| Skipped | ${stats.skipped || 0} |
-| Flaky | ${stats.flaky || 0} |
-
-## Impacted Specs
-
-${specs.map(spec => `- ${spec}`).join('\n')}
 
 ## Executed Impacted Tests
 
@@ -195,4 +240,16 @@ const regressionReport = {
 
   analysis_markdown: analysisMarkdown,
 
-  analysis
+  analysis_json: analysisJson,
+
+  created_at:
+    payload.generated_at ||
+    new Date().toISOString()
+};
+
+fs.writeFileSync(
+  'regression-report.json',
+  JSON.stringify(regressionReport, null, 2)
+);
+
+console.log('regression-report.json generated successfully');
