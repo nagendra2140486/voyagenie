@@ -30,7 +30,7 @@ console.log('Selected specs:');
 console.log(specs);
 
 /*
- * Extract actual test titles
+ * Extract actual Playwright test titles
  */
 const impactedTitles = testCases.map(tc => {
   const parts = tc.title.split('>');
@@ -39,27 +39,6 @@ const impactedTitles = testCases.map(tc => {
 
 console.log('Impacted test titles:');
 console.log(impactedTitles);
-
-/*
- * Helpful debugging
- */
-try {
-  console.log('\n===== PLAYWRIGHT TEST LIST =====\n');
-
-  execSync(
-    `npx playwright test ${specs.join(' ')} --list`,
-    {
-      stdio: 'inherit',
-      shell: true,
-      env: process.env
-    }
-  );
-
-  console.log('\n===== END TEST LIST =====\n');
-} catch (err) {
-  console.error('Unable to list tests');
-  console.error(err.message);
-}
 
 /*
  * Build grep pattern
@@ -74,7 +53,7 @@ console.log('Generated grep pattern:');
 console.log(grepPattern);
 
 /*
- * Execute impacted tests only
+ * Execute only impacted tests
  */
 const command =
   `npx playwright test ${specs.join(' ')} --grep "${grepPattern}" --reporter=json > results.json`;
@@ -94,7 +73,7 @@ try {
 }
 
 /*
- * Read results
+ * Read Playwright results
  */
 let results = {};
 
@@ -123,21 +102,23 @@ const actualExecuted =
   (stats.flaky || 0);
 
 /*
- * Collect failures
+ * Failure collection
  */
 const failures = [];
 
 if (Array.isArray(results.suites)) {
+
   const walkSuites = suites => {
+
     for (const suite of suites) {
 
       if (suite.specs) {
+
         for (const spec of suite.specs) {
 
           const failed =
             spec.tests?.some(
-              test =>
-                test.status === 'unexpected'
+              test => test.status === 'unexpected'
             );
 
           if (failed) {
@@ -199,30 +180,82 @@ const analysisJson = {
 };
 
 /*
- * Analysis Markdown
+ * Narrative markdown like Timesheet reports
  */
 const analysisMarkdown = `
 # Functional Execution — ${payload.appname} PR #${payload.pr_id}
 
-## Impact Analysis
+The Impact Gap Analyzer identified ${payload.total_impacted || testCases.length}
+impacted test cases from a regression suite containing
+${payload.total_in_suite || 'N/A'} total automated tests.
 
-| Metric | Value |
+## Execution Summary
+
+| Metric | Result |
 | --- | --- |
-| Selection Mode | ${payload.selection_mode} |
-| Impacted Tests | ${payload.total_impacted || testCases.length} |
-| Suite Size | ${payload.total_in_suite || 'N/A'} |
-
-## Execution Result
-
-| Metric | Count |
-| --- | --- |
-| Executed | ${actualExecuted} |
+| Impacted Tests Selected | ${payload.total_impacted || testCases.length} |
+| Tests Executed | ${actualExecuted} |
 | Passed | ${stats.expected || 0} |
 | Failed | ${stats.unexpected || 0} |
+
+## Impact Selection
+
+Selection Mode:
+${payload.selection_mode}
+
+Selection Reason:
+${payload.selection_reason}
 
 ## Executed Impacted Tests
 
 ${testCases.map(tc => `- ${tc.title}`).join('\n')}
+
+${
+failures.length
+? `
+## Failures, and what each is attributable to
+
+| Test | Attribution |
+| --- | --- |
+${failures.map(f => `| ${f.test} | ${f.attribution} |`).join('\n')}
+
+The impacted failures should be reviewed to determine whether they represent application regressions, environment issues, deployment differences, or data setup problems.
+`
+: `
+## Functional Findings
+
+All impacted test cases completed successfully.
+
+No impacted test failures were observed during execution.
+`
+}
+
+## Conclusion
+
+Only impacted test cases selected by the impact analysis engine were executed.
+
+Execution completed with:
+
+- Executed: ${actualExecuted}
+- Passed: ${stats.expected || 0}
+- Failed: ${stats.unexpected || 0}
+
+${
+(stats.unexpected || 0) > 0
+? 'One or more impacted test cases failed and require investigation.'
+: 'No functional regressions were detected within the impacted scope.'
+}
+
+<!-- prqe-verdict
+${JSON.stringify({
+  stage: 'functional',
+  deployed: {
+    executed: actualExecuted,
+    passed: stats.expected || 0,
+    failed: stats.unexpected || 0
+  }
+})}
+-->
 `;
 
 const regressionReport = {
