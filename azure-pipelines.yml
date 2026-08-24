@@ -31,9 +31,12 @@ steps:
     printf '%s' "$PAYLOAD" > payload.json
 
     echo "Payload saved successfully"
+
     ls -la
+
   workingDirectory: tests
   displayName: 'Save Incoming Payload'
+
   env:
     PAYLOAD: ${{ parameters.payload }}
 
@@ -41,6 +44,17 @@ steps:
     node execute-impacted-tests.js
   workingDirectory: tests
   displayName: 'Execute Regression Tests'
+
+- script: |
+    echo "Verifying generated files"
+
+    ls -la
+
+    cat regression-report.json
+
+  workingDirectory: tests
+  displayName: 'Verify Regression Report'
+  condition: always()
 
 - script: |
     echo "Publishing regression report"
