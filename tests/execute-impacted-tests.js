@@ -7,6 +7,14 @@ const payload = JSON.parse(
 
 console.log(`Running impacted suite for ${payload.appname}`);
 
+/*
+ * Override localhost with deployed Voyagenie URL
+ */
+process.env.BASE_URL =
+  'https://voyagenie-app.azurewebsites.net';
+
+console.log(`Base URL: ${process.env.BASE_URL}`);
+
 const testCases = payload.test_cases || [];
 
 if (!testCases.length) {
@@ -16,8 +24,8 @@ if (!testCases.length) {
 /*
  * Playwright rootDir is already e2e
  * Convert:
- * tests/e2e/auth.spec.ts
- * -> auth.spec.ts
+ * tests/e2e/business.spec.ts
+ * -> business.spec.ts
  */
 const specs = [
   ...new Set(
@@ -45,7 +53,8 @@ try {
 
   execSync(command, {
     stdio: 'inherit',
-    shell: true
+    shell: true,
+    env: process.env
   });
 
 } catch (err) {
