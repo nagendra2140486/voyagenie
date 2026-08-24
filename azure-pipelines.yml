@@ -46,25 +46,41 @@ steps:
   displayName: 'Execute Regression Tests'
 
 - script: |
-    echo "Verifying generated files"
-
-    ls -la
+    echo "===== REGRESSION REPORT ====="
 
     cat regression-report.json
 
+    echo ""
+    echo "===== REPORT SIZE ====="
+
+    wc -c regression-report.json
+
   workingDirectory: tests
-  displayName: 'Verify Regression Report'
+  displayName: 'Debug Regression Report'
   condition: always()
 
 - script: |
     echo "Publishing regression report"
 
-    curl --fail \
+    RESPONSE=$(curl -s \
       --location \
       --request POST \
       --header "Content-Type: application/json" \
       --data @regression-report.json \
-      "https://claude-agent-services-e9g8gzh8d3fgbxe6.canadacentral-01.azurewebsites.net/api/publish"
+      --write-out "\nHTTP_STATUS:%{http_code}" \
+      "https://claude-agent-services-e9g8gzh8d3fgbxe6.canadacentral-01.azurewebsites.net/api/publish")
+
+    echo "===== API RESPONSE ====="
+    echo "$RESPONSE"
+
+    HTTP_STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
+
+    echo "HTTP STATUS = $HTTP_STATUS"
+
+    if [ "$HTTP_STATUS" -ge 400 ]; then
+      echo "API call failed"
+      exit 1
+    fi
 
   workingDirectory: tests
   displayName: 'Publish Regression Report'
