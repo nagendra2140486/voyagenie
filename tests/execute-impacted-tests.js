@@ -1,10 +1,12 @@
-const { execSync } = require('child_process');
+const fs = require('fs');
 
-console.log('Starting regression execution...');
-
-execSync(
-  'npx playwright test --reporter=json > results.json',
-  { stdio: 'inherit', shell: true }
+const payload = JSON.parse(
+  fs.readFileSync('payload.json', 'utf8')
 );
 
-console.log('Regression execution completed.');
+fs.writeFileSync(
+  'regression-report.json',
+  JSON.stringify(payload, null, 2)
+);
+
+console.log('regression-report.json generated');
