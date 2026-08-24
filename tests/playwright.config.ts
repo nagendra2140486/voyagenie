@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-export const API_URL = process.env.VOYAGENIE_API_URL || 'http://localhost:4000';
+export const API_URL =
+  process.env.VOYAGENIE_API_URL ||
+  'http://localhost:4000';
 
 /** Recording the impact coverage map needs every test in one pass, not sharded across workers. */
 const recordingCoverage = process.env.VOYAGENIE_COVERAGE === '1';
@@ -13,16 +15,27 @@ export default defineConfig({
   workers: recordingCoverage ? 1 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+
   reporter: recordingCoverage
     ? [['list'], ['./reporters/coverage-map.ts']]
     : process.env.CI
       ? [['list'], ['html', { open: 'never' }]]
       : 'list',
+
   use: {
-    baseURL: process.env.VOYAGENIE_BASE_URL || 'http://localhost:5173',
+    baseURL:
+      process.env.VOYAGENIE_BASE_URL ||
+      'https://voyagenie-app.azurewebsites.net',
+
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
 });
