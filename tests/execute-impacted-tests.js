@@ -5,21 +5,40 @@ const payload = JSON.parse(
   fs.readFileSync('payload.json', 'utf8')
 );
 
-console.log(`Running regression suite for ${payload.appname}`);
+console.log(`Running impacted suite for ${payload.appname}`);
+
+const testCases = payload.test_cases || [];
+
+const specs = [
+  ...new Set(
+    testCases.map(tc => tc.spec)
+  )
+];
+
+const grep = testCases
+  .map(tc =>
+    tc.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  )
+  .join('|');
+
+const command = `
+npx playwright test
+${specs.join(' ')}
+--grep "${grep}"
+--reporter=json > results.json
+`;
+
+console.log(command);
 
 try {
 
-  execSync(
-    'npx playwright test --reporter=json > results.json',
-    {
-      stdio: 'inherit',
-      shell: true
-    }
-  );
+  execSync(command, {
+    stdio: 'inherit',
+    shell: true
+  });
 
 } catch (err) {
 
-  console.error('Playwright execution failed');
   console.error(err.message);
 
 }
@@ -31,7 +50,8 @@ const regressionReport = {
 
   appname: payload.appname,
 
-  reporttype: payload.reporttype,
+  reporttype:
+    payload.reporttype || 'regression-report',
 
   repository: payload.repository,
 
@@ -52,5 +72,3 @@ fs.writeFileSync(
   'regression-report.json',
   JSON.stringify(regressionReport, null, 2)
 );
-
-console.log('regression-report.json generated successfully');
