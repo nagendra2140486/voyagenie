@@ -14,34 +14,31 @@ if (!testCases.length) {
 }
 
 /*
- * Convert paths for execution from tests folder
+ * Playwright rootDir is already e2e
+ * Convert:
+ * tests/e2e/auth.spec.ts
+ * -> auth.spec.ts
  */
 const specs = [
   ...new Set(
     testCases.map(tc =>
-      tc.spec.replace(/^tests\//, '')
+      tc.spec
+        .replace(/^tests\/e2e\//, '')
+        .replace(/^e2e\//, '')
     )
   )
 ];
 
-/*
- * Build grep from titles
- */
-const grep = testCases
-  .map(tc =>
-    tc.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  )
-  .join('|');
-
-console.log('Specs to execute:');
+console.log('Specs selected from payload:');
 console.log(specs);
 
-console.log('Grep:');
-console.log(grep);
-
+/*
+ * Execute impacted specs only
+ */
 const command =
-  `npx playwright test ${specs.join(' ')} --grep "${grep}" --reporter=json > results.json`;
+  `npx playwright test ${specs.join(' ')} --reporter=json > results.json`;
 
+console.log('Executing command:');
 console.log(command);
 
 try {
@@ -59,7 +56,7 @@ try {
 }
 
 /*
- * Read results.json
+ * Read results
  */
 let results = {};
 
@@ -80,11 +77,13 @@ try {
 
 }
 
-const stats = results.stats || {};
+const stats = results.stats || {
+  expected: 0,
+  unexpected: 0,
+  skipped: 0,
+  flaky: 0
+};
 
-/*
- * Build analysis_json
- */
 const analysisJson = {
   stage: 'functional',
   pr_id: payload.pr_id,
@@ -93,13 +92,11 @@ const analysisJson = {
   selection_reason: payload.selection_reason,
   total_impacted: payload.total_impacted,
   total_in_suite: payload.total_in_suite,
+  selected_specs: specs,
   executed_tests: testCases.length,
   stats
 };
 
-/*
- * Build analysis_markdown
- */
 const analysisMarkdown = `
 # Impacted Regression Execution
 
@@ -120,12 +117,13 @@ ${payload.selection_reason}
 - Passed: ${stats.expected || 0}
 - Failed: ${stats.unexpected || 0}
 - Skipped: ${stats.skipped || 0}
+- Flaky: ${stats.flaky || 0}
 
-## Executed Specs
+## Impacted Specs
 
 ${specs.map(spec => `- ${spec}`).join('\n')}
 
-## Executed Tests
+## Impacted Tests
 
 ${testCases.map(tc => `- ${tc.title}`).join('\n')}
 `;
