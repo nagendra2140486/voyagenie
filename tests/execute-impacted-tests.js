@@ -14,7 +14,7 @@ if (!testCases.length) {
 }
 
 /*
- * Extract impacted specs
+ * Impacted specs
  */
 const specs = [
   ...new Set(
@@ -26,14 +26,25 @@ const specs = [
   )
 ];
 
-console.log('Specs selected from payload:');
+/*
+ * Run ONLY impacted test titles
+ */
+const titles = testCases.map(tc => tc.title);
+
+const grepPattern = titles
+  .map(title =>
+    title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  )
+  .join('|');
+
+console.log('Selected specs:');
 console.log(specs);
 
-/*
- * Execute impacted specs
- */
+console.log('Selected impacted tests:');
+console.log(titles);
+
 const command =
-  `npx playwright test ${specs.join(' ')} --reporter=json > results.json`;
+  `npx playwright test --grep "${grepPattern}" --reporter=json > results.json`;
 
 console.log('Executing command:');
 console.log(command);
@@ -65,9 +76,6 @@ try {
   console.error(err.message);
 }
 
-/*
- * Stats
- */
 const stats = results.stats || {
   expected: 0,
   unexpected: 0,
@@ -81,9 +89,6 @@ const actualExecuted =
   (stats.skipped || 0) +
   (stats.flaky || 0);
 
-/*
- * Enhanced JSON model for UI consumption
- */
 const analysisJson = {
   stage: 'functional',
 
@@ -118,9 +123,6 @@ const analysisJson = {
   }
 };
 
-/*
- * Human-readable markdown
- */
 const analysisMarkdown = `
 # Functional Execution
 
@@ -149,11 +151,9 @@ PR: ${payload.pr_id}
 
 ${specs.map(spec => `- ${spec}`).join('\n')}
 
-## Impacted Tests
+## Executed Impacted Tests
 
-${testCases
-  .map(tc => `- ${tc.title}`)
-  .join('\n')}
+${testCases.map(tc => `- ${tc.title}`).join('\n')}
 `;
 
 const regressionReport = {
