@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
 const payload = JSON.parse(
@@ -12,6 +13,13 @@ const testCases = payload.test_cases || [];
 if (!testCases.length) {
   throw new Error('No test_cases found in payload');
 }
+
+/*
+ * Ensure attachments folder exists
+ */
+fs.mkdirSync('attachments', {
+  recursive: true
+});
 
 /*
  * Impacted specs
@@ -30,7 +38,7 @@ console.log('Selected specs:');
 console.log(specs);
 
 /*
- * Extract actual Playwright test titles
+ * Extract Playwright test titles
  */
 const impactedTitles = testCases.map(tc => {
   const parts = tc.title.split('>');
@@ -68,7 +76,9 @@ try {
     env: process.env
   });
 } catch (err) {
-  console.error('Playwright execution completed with failures');
+  console.error(
+    'Playwright execution completed with failures'
+  );
   console.error(err.message);
 }
 
@@ -78,28 +88,91 @@ try {
 let results = {};
 
 try {
+
   if (fs.existsSync('results.json')) {
+
     results = JSON.parse(
-      fs.readFileSync('results.json', 'utf8')
+      fs.readFileSync(
+        'results.json',
+        'utf8'
+      )
     );
+
   }
+
 } catch (err) {
-  console.error('Unable to parse results.json');
+
+  console.error(
+    'Unable to parse results.json'
+  );
+
   console.error(err.message);
+
 }
 
-const stats = results.stats || {
-  expected: 0,
-  unexpected: 0,
-  skipped: 0,
-  flaky: 0
-};
+const stats =
+  results.stats || {
+    expected: 0,
+    unexpected: 0,
+    skipped: 0,
+    flaky: 0
+  };
 
 const actualExecuted =
   (stats.expected || 0) +
   (stats.unexpected || 0) +
   (stats.skipped || 0) +
   (stats.flaky || 0);
+
+/*
+ * Copy all failure screenshots
+ */
+const screenshotMap = {};
+
+try {
+
+  const screenshots = execSync(
+    'find test-results -name "*.png" -type f',
+    {
+      encoding: 'utf8',
+      shell: true
+    }
+  )
+    .split('\n')
+    .filter(Boolean);
+
+  screenshots.forEach(file => {
+
+    const folder =
+      path.basename(
+        path.dirname(file)
+      );
+
+    const targetFile =
+      `${folder}.png`;
+
+    const targetPath =
+      path.join(
+        'attachments',
+        targetFile
+      );
+
+    fs.copyFileSync(
+      file,
+      targetPath
+    );
+
+    screenshotMap[folder] =
+      targetPath.replace(/\\/g, '/');
+  });
+
+} catch (err) {
+
+  console.log(
+    'No screenshots available'
+  );
+
+}
 
 /*
  * Failure collection
@@ -118,25 +191,45 @@ if (Array.isArray(results.suites)) {
 
           const failed =
             spec.tests?.some(
-              test => test.status === 'unexpected'
+              test =>
+                test.status === 'unexpected'
             );
 
           if (failed) {
+
+            let screenshot = null;
+
+            const possible =
+              Object.values(
+                screenshotMap
+              );
+
+            if (possible.length) {
+              screenshot =
+                possible.shift();
+            }
+
             failures.push({
               test: spec.title,
-              attribution: 'test_failure'
+              attribution:
+                'test_failure',
+              screenshot
             });
+
           }
         }
       }
 
       if (suite.suites) {
-        walkSuites(suite.suites);
+        walkSuites(
+          suite.suites
+        );
       }
     }
   };
 
   walkSuites(results.suites);
+
 }
 
 /*
@@ -150,6 +243,7 @@ const analysisJson = {
   runner: 'playwright',
 
   impacted_analysis: {
+
     total_impacted:
       payload.total_impacted ||
       testCases.length,
@@ -165,9 +259,15 @@ const analysisJson = {
   },
 
   deployed: {
-    executed: actualExecuted,
-    passed: stats.expected || 0,
-    failed: stats.unexpected || 0
+
+    executed:
+      actualExecuted,
+
+    passed:
+      stats.expected || 0,
+
+    failed:
+      stats.unexpected || 0
   },
 
   executed_tests:
@@ -180,20 +280,27 @@ const analysisJson = {
 };
 
 /*
- * Narrative markdown like Timesheet reports
+ * Markdown
  */
 const analysisMarkdown = `
 # Functional Execution — ${payload.appname} PR #${payload.pr_id}
 
-The Impact Gap Analyzer identified ${payload.total_impacted || testCases.length}
+The Impact Gap Analyzer identified ${
+payload.total_impacted || testCases.length
+}
 impacted test cases from a regression suite containing
-${payload.total_in_suite || 'N/A'} total automated tests.
+${
+payload.total_in_suite || 'N/A'
+}
+total automated tests.
 
 ## Execution Summary
 
 | Metric | Result |
 | --- | --- |
-| Impacted Tests Selected | ${payload.total_impacted || testCases.length} |
+| Impacted Tests Selected | ${
+payload.total_impacted || testCases.length
+} |
 | Tests Executed | ${actualExecuted} |
 | Passed | ${stats.expected || 0} |
 | Failed | ${stats.unexpected || 0} |
@@ -201,23 +308,32 @@ ${payload.total_in_suite || 'N/A'} total automated tests.
 ## Impact Selection
 
 Selection Mode:
+
 ${payload.selection_mode}
 
 Selection Reason:
+
 ${payload.selection_reason}
 
 ## Executed Impacted Tests
 
-${testCases.map(tc => `- ${tc.title}`).join('\n')}
+${testCases
+.map(tc => `- ${tc.title}`)
+.join('\n')}
 
 ${
 failures.length
 ? `
 ## Failures, and what each is attributable to
 
-| Test | Attribution |
-| --- | --- |
-${failures.map(f => `| ${f.test} | ${f.attribution} |`).join('\n')}
+| Test | Attribution | Screenshot |
+| --- | --- | --- |
+${failures
+.map(
+f =>
+`| ${f.test} | ${f.attribution} | ${f.screenshot || 'N/A'} |`
+)
+.join('\n')}
 
 The impacted failures should be reviewed to determine whether they represent application regressions, environment issues, deployment differences, or data setup problems.
 `
@@ -248,12 +364,12 @@ ${
 
 <!-- prqe-verdict
 ${JSON.stringify({
-  stage: 'functional',
-  deployed: {
-    executed: actualExecuted,
-    passed: stats.expected || 0,
-    failed: stats.unexpected || 0
-  }
+stage: 'functional',
+deployed: {
+executed: actualExecuted,
+passed: stats.expected || 0,
+failed: stats.unexpected || 0
+}
 })}
 -->
 `;
@@ -263,17 +379,23 @@ const regressionReport = {
     payload.id ||
     `${payload.appname}_regression-report_${payload.pr_id}`,
 
-  appname: payload.appname,
+  appname:
+    payload.appname,
 
-  reporttype: 'regression-report',
+  reporttype:
+    'regression-report',
 
-  repository: payload.repository,
+  repository:
+    payload.repository,
 
-  pr_id: payload.pr_id,
+  pr_id:
+    payload.pr_id,
 
-  analysis_markdown: analysisMarkdown,
+  analysis_markdown:
+    analysisMarkdown,
 
-  analysis_json: analysisJson,
+  analysis_json:
+    analysisJson,
 
   created_at:
     payload.generated_at ||
@@ -282,7 +404,13 @@ const regressionReport = {
 
 fs.writeFileSync(
   'regression-report.json',
-  JSON.stringify(regressionReport, null, 2)
+  JSON.stringify(
+    regressionReport,
+    null,
+    2
+  )
 );
 
-console.log('regression-report.json generated successfully');
+console.log(
+  'regression-report.json generated successfully'
+);
