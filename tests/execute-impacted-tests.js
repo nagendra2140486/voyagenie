@@ -37,7 +37,7 @@ console.log('Selected specs:');
 console.log(specs);
 
 /*
- * Extract Playwright titles
+ * Extract impacted test titles
  */
 const impactedTitles = testCases.map(tc => {
   const parts = tc.title.split('>');
@@ -87,15 +87,20 @@ try {
 }
 
 /*
- * Copy screenshots AFTER execution
+ * Copy ONLY failed screenshots
  */
+console.log(
+  'Copying failed screenshots into attachments...'
+);
+
 try {
 
   execSync(
     `
-    find test-results -name "*.png" -type f | while read file
+    find test-results -name "test-failed-1.png" -type f | while read file
     do
-      cp "$file" attachments/
+      folder=$(basename "$(dirname "$file")")
+      cp "$file" "attachments/$folder.png"
     done
     `,
     {
@@ -107,7 +112,7 @@ try {
 } catch (err) {
 
   console.log(
-    'No screenshots found in test-results'
+    'No failed screenshots found'
   );
 
 }
@@ -136,7 +141,7 @@ try {
 }
 
 /*
- * Read results
+ * Read Playwright results
  */
 let results = {};
 
@@ -178,7 +183,7 @@ const actualExecuted =
   (stats.flaky || 0);
 
 /*
- * Failure collection
+ * Collect failures
  */
 const failures = [];
 
@@ -368,7 +373,7 @@ failed: stats.unexpected || 0
 `;
 
 /*
- * Final Report
+ * Final report
  */
 const regressionReport = {
   id:
