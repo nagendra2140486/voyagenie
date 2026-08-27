@@ -97,7 +97,7 @@ steps:
       --header "Content-Type: application/json" \
       --data @regression-report.json \
       --write-out "\nHTTP_STATUS:%{http_code}" \
-      "https://claude-agent-services-e9g8gzh8d3fgbxe6.canadacentral-01.azurewebsites.net/api/publish")
+      "https://prqe-services-hsddfvfffjcjceef.canadacentral-01.azurewebsites.net/api/publish")
 
     echo "$RESPONSE"
 
