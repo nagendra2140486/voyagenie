@@ -17,9 +17,12 @@ steps:
 #
 
 - script: |
-    node clone-app.js
+    git clone \
+      --branch nagendra/functionaltests \
+      https://github.com/nagendra2140486/voyagenie.git \
+      app
 
-  displayName: 'Clone Application Repository'
+  displayName: 'Clone Voyagenie Repository'
 
 #
 # Install k6
