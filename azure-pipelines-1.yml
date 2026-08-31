@@ -61,10 +61,94 @@ steps:
   displayName: 'Verify k6'
 
 #
-# Verify API Endpoint
+# Show URL
 #
 
 - script: |
-    echo "Testing API Endpoint"
+    echo "VOYAGENIE_API_URL=[$VOYAGENIE_API_URL]"
 
-    curl
+  displayName: 'Show API URL'
+
+  env:
+    VOYAGENIE_API_URL: $(VOYAGENIE_API_URL)
+
+#
+# Verify Endpoint
+#
+
+- script: |
+    echo "Testing endpoint..."
+
+    curl --head "$VOYAGENIE_API_URL"
+
+  displayName: 'Verify API Endpoint'
+
+  env:
+    VOYAGENIE_API_URL: $(VOYAGENIE_API_URL)
+
+#
+# Execute Performance Tests
+#
+
+- script: |
+    k6 run \
+      perf/critical-journeys.js \
+      --summary-export=performance-report.json
+
+  workingDirectory: app
+
+  displayName: 'Execute Performance Tests'
+
+  env:
+    VOYAGENIE_API_URL: $(VOYAGENIE_API_URL)
+
+#
+# Publish Performance Summary
+#
+
+- script: |
+    cat > performance-summary.md << EOF
+    # PRQE Performance Execution
+
+    Voyagenie performance execution completed.
+
+    Target URL:
+
+    $(VOYAGENIE_API_URL)
+
+    See performance-report artifact for detailed metrics.
+    EOF
+
+    echo "##vso[task.uploadsummary]$(pwd)/performance-summary.md"
+
+  workingDirectory: app
+
+  displayName: 'Publish Performance Summary'
+
+  condition: always()
+
+#
+# Publish Performance Report
+#
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Performance Report'
+
+  condition: always()
+
+  inputs:
+    targetPath: 'app/performance-report.json'
+    artifact: 'performance-report'
+
+#
+# Publish Performance Assets
+#
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Performance Assets'
+
+  condition: always()
+
+  inputs:
+    targetPath: 'app/perf'
+    artifact: 'performance-assets'
