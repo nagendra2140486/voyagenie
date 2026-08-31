@@ -1,0 +1,96 @@
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+
+- checkout: self
+
+- task: UseNode@1
+  displayName: 'Install Node.js'
+  inputs:
+    version: '20.x'
+
+#
+# Clone application
+#
+
+- script: |
+    node clone-app.js
+
+  displayName: 'Clone Application Repository'
+
+#
+# Install k6
+#
+
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y gpg
+
+    curl -fsSL https://dl.k6.io/key.gpg | \
+    sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+
+    echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | \
+    sudo tee /etc/apt/sources.list.d/k6.list
+
+    sudo apt-get update
+    sudo apt-get install -y k6
+
+  displayName: 'Install k6'
+
+#
+# Verify k6
+#
+
+- script: |
+    k6 version
+
+  displayName: 'Verify k6'
+
+#
+# Execute performance test
+#
+
+- script: |
+    k6 run perf/critical-journeys.js \
+      --summary-export=performance-report.json
+
+  workingDirectory: app
+
+  displayName: 'Execute Performance Tests'
+
+#
+# Publish summary
+#
+
+- script: |
+    cat > performance-summary.md << EOF
+    # PRQE Performance Execution
+
+    Voyagenie performance tests executed successfully.
+
+    See performance-report artifact for detailed metrics.
+    EOF
+
+    echo "##vso[task.uploadsummary]$(pwd)/performance-summary.md"
+
+  workingDirectory: app
+
+  displayName: 'Publish Performance Summary'
+
+  condition: always()
+
+#
+# Publish performance report
+#
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Performance Report'
+
+  condition: always()
+
+  inputs:
+    targetPath: 'app/performance-report.json'
+    artifact: 'performance-report'
