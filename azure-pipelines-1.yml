@@ -79,19 +79,29 @@ steps:
   continueOnError: true
 
 #
-# Generate Summary
+# Generate PRQE Performance Report
+#
+
+- script: |
+    node perf/generate-performance-report.js
+
+  workingDirectory: app
+
+  displayName: 'Generate Performance Analysis'
+
+  condition: always()
+
+#
+# Publish Performance Summary
 #
 
 - script: |
     cat > performance-summary.md << EOF
     # PRQE Performance Execution
 
-    Voyagenie performance execution completed.
+    Performance testing completed.
 
-    API URL:
-    $(VOYAGENIE_API_URL)
-
-    See performance-report artifact for detailed metrics.
+    See performance-analysis artifact for detailed results.
     EOF
 
     echo "##vso[task.uploadsummary]$(pwd)/performance-summary.md"
@@ -103,17 +113,30 @@ steps:
   condition: always()
 
 #
-# Publish Performance Report
+# Publish Performance Analysis
 #
 
 - task: PublishPipelineArtifact@1
-  displayName: 'Publish Performance Report'
+  displayName: 'Publish Performance Analysis'
+
+  condition: always()
+
+  inputs:
+    targetPath: 'app/performance-analysis.json'
+    artifact: 'performance-analysis'
+
+#
+# Publish Raw k6 Report
+#
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Raw k6 Report'
 
   condition: always()
 
   inputs:
     targetPath: 'app/performance-report.json'
-    artifact: 'performance-report'
+    artifact: 'performance-raw'
 
 #
 # Publish Performance Assets
