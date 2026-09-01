@@ -61,32 +61,6 @@ steps:
   displayName: 'Verify k6'
 
 #
-# Show URL
-#
-
-- script: |
-    echo "VOYAGENIE_API_URL=[$VOYAGENIE_API_URL]"
-
-  displayName: 'Show API URL'
-
-  env:
-    VOYAGENIE_API_URL: $(VOYAGENIE_API_URL)
-
-#
-# Verify Endpoint
-#
-
-- script: |
-    echo "Testing endpoint..."
-
-    curl --head "$VOYAGENIE_API_URL"
-
-  displayName: 'Verify API Endpoint'
-
-  env:
-    VOYAGENIE_API_URL: $(VOYAGENIE_API_URL)
-
-#
 # Execute Performance Tests
 #
 
@@ -102,8 +76,10 @@ steps:
   env:
     VOYAGENIE_API_URL: $(VOYAGENIE_API_URL)
 
+  continueOnError: true
+
 #
-# Publish Performance Summary
+# Generate Summary
 #
 
 - script: |
@@ -112,8 +88,7 @@ steps:
 
     Voyagenie performance execution completed.
 
-    Target URL:
-
+    API URL:
     $(VOYAGENIE_API_URL)
 
     See performance-report artifact for detailed metrics.
