@@ -124,7 +124,17 @@ steps:
   inputs:
     targetPath: 'app/performance-analysis.json'
     artifact: 'performance-analysis'
+- script: |
+    echo "Publishing performance report..."
 
+    curl -v \
+      --request POST \
+      --header "Content-Type: application/json" \
+      --data @performance-analysis.json \
+      --write-out "\nHTTP_STATUS:%{http_code}" \
+      "https://prqe-services-hsddfvfffjcjceef.westus3-01.azurewebsites.net/api/publish"
+  workingDirectory: app
+  displayName: 'Publish Performance Report To PRQE'
 #
 # Publish Raw k6 Report
 #
